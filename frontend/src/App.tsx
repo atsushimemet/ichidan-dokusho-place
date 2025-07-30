@@ -252,7 +252,7 @@ function App() {
                               <div className="flex justify-between items-start mb-3">
                                 <h4 className="font-medium text-primary-900 text-sm sm:text-base">{cafe.name}</h4>
                                 <div className="text-right">
-                                  <span className="text-xs text-primary-500 block">{cafe.location}</span>
+                                  <span className="text-xs text-primary-500 block">{cafe.station}</span>
                                   {cafe.walkingTime && (
                                     <span className="text-xs text-primary-600 bg-primary-100 px-2 py-1 rounded">
                                       🚶‍♂️ {formatWalkingTime(cafe.walkingTime)}
@@ -292,7 +292,7 @@ function App() {
                               <div className="flex justify-between items-start mb-3">
                                 <h4 className="font-medium text-primary-900 text-sm sm:text-base">{bookstore.name}</h4>
                                 <div className="text-right">
-                                  <span className="text-xs text-primary-500 block">{bookstore.location}</span>
+                                  <span className="text-xs text-primary-500 block">{bookstore.station}</span>
                                   {bookstore.walkingTime && (
                                     <span className="text-xs text-primary-600 bg-primary-100 px-2 py-1 rounded">
                                       🚶‍♂️ {formatWalkingTime(bookstore.walkingTime)}
