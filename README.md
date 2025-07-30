@@ -56,15 +56,46 @@
 | データ管理     | PostgreSQL（Supabase上）   |
 | 開発支援       | Cursor, Claude             |
 
+## 🚀 開発環境の起動
+
+### Docker開発環境での起動
+
+```bash
+# 開発環境を起動
+docker-compose -f docker-compose.dev.yml up --build
+
+# フロントエンド: http://localhost:5173
+# バックエンド: http://localhost:3000
+# データベース: localhost:5432
+```
+
+### ローカル開発環境での起動
+
+#### フロントエンド
+```bash
+cd frontend
+npm install
+npm run dev
+# http://localhost:5173
+```
+
+#### バックエンド
+```bash
+cd backend
+npm install
+npm run dev
+# http://localhost:3000
+```
+
 ## 🔧 開発フェーズ（プロトタイプ v0.1）
 
 ### 実装機能
 
-- [ ] ユーザー最寄駅の登録（プロフィール画面）
-- [ ] 管理者による喫茶店／本屋の登録（Google Mapリンク／紹介文）
-- [ ] 駅名に紐づくレコメンド一覧API（`cafes` / `bookstores`）
-- [ ] 「近くの喫茶店・本屋を見る」画面（リスト表示＋駅フィルター）
-- [ ] サンプルデータの事前登録（10件程度ずつ）
+- [x] ユーザー最寄駅の登録（プロフィール画面）
+- [x] 管理者による喫茶店／本屋の登録（Google Mapリンク／紹介文）
+- [x] 駅名に紐づくレコメンド一覧API（`cafes` / `bookstores`）
+- [x] 「近くの喫茶店・本屋を見る」画面（リスト表示＋駅フィルター）
+- [x] サンプルデータの事前登録（10件程度ずつ）
 - [ ] 掲載基準のドキュメント整備（docs/definition）
 
 ### 非対応（v0.2以降で検討）
