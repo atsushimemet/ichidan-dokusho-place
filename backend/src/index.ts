@@ -26,7 +26,7 @@ let cafes: Place[] = [
     location: '渋谷区',
     station: '渋谷駅',
     googleMapsUrl: 'https://maps.google.com/?q=喫茶+木漏れ日+渋谷',
-    walkingTime: '3分'
+    walkingTime: '3'
   },
   {
     id: 2,
@@ -34,7 +34,7 @@ let cafes: Place[] = [
     location: '新宿区',
     station: '新宿駅',
     googleMapsUrl: 'https://maps.google.com/?q=カフェ+ブックエンド+新宿',
-    walkingTime: '5分'
+    walkingTime: '5'
   },
   {
     id: 3,
@@ -42,7 +42,7 @@ let cafes: Place[] = [
     location: '池袋区',
     station: '池袋駅',
     googleMapsUrl: 'https://maps.google.com/?q=読書カフェ+静寂+池袋',
-    walkingTime: '7分'
+    walkingTime: '7'
   },
   {
     id: 4,
@@ -50,7 +50,7 @@ let cafes: Place[] = [
     location: '千代田区',
     station: '東京駅',
     googleMapsUrl: 'https://maps.google.com/?q=コーヒーショップ+ページ+東京',
-    walkingTime: '4分'
+    walkingTime: '4'
   },
   {
     id: 5,
@@ -58,7 +58,7 @@ let cafes: Place[] = [
     location: '港区',
     station: '品川駅',
     googleMapsUrl: 'https://maps.google.com/?q=喫茶室+思索+品川',
-    walkingTime: '6分'
+    walkingTime: '6'
   },
   {
     id: 6,
@@ -66,7 +66,7 @@ let cafes: Place[] = [
     location: '台東区',
     station: '上野駅',
     googleMapsUrl: 'https://maps.google.com/?q=カフェ+リテラチャー+上野',
-    walkingTime: '8分'
+    walkingTime: '8'
   },
   {
     id: 7,
@@ -74,7 +74,7 @@ let cafes: Place[] = [
     location: '千代田区',
     station: '秋葉原駅',
     googleMapsUrl: 'https://maps.google.com/?q=読書スペース+デジタル+秋葉原',
-    walkingTime: '2分'
+    walkingTime: '2'
   },
   {
     id: 8,
@@ -82,7 +82,7 @@ let cafes: Place[] = [
     location: '渋谷区',
     station: '原宿駅',
     googleMapsUrl: 'https://maps.google.com/?q=カフェ+アートブック+原宿',
-    walkingTime: '4分'
+    walkingTime: '4'
   },
   {
     id: 9,
@@ -90,7 +90,7 @@ let cafes: Place[] = [
     location: '目黒区',
     station: '代官山駅',
     googleMapsUrl: 'https://maps.google.com/?q=喫茶店+文庫+代官山',
-    walkingTime: '5分'
+    walkingTime: '5'
   },
   {
     id: 10,
@@ -98,7 +98,7 @@ let cafes: Place[] = [
     location: '渋谷区',
     station: '恵比寿駅',
     googleMapsUrl: 'https://maps.google.com/?q=カフェ+エッセイ+恵比寿',
-    walkingTime: '3分'
+    walkingTime: '3'
   }
 ];
 
@@ -109,7 +109,7 @@ let bookstores: Place[] = [
     location: '渋谷区',
     station: '渋谷駅',
     googleMapsUrl: 'https://maps.google.com/?q=三省堂書店+渋谷店',
-    walkingTime: '2分'
+    walkingTime: '2'
   },
   {
     id: 2,
@@ -117,7 +117,7 @@ let bookstores: Place[] = [
     location: '新宿区',
     station: '新宿駅',
     googleMapsUrl: 'https://maps.google.com/?q=紀伊國屋書店+新宿本店',
-    walkingTime: '1分'
+    walkingTime: '1'
   },
   {
     id: 3,
@@ -125,7 +125,7 @@ let bookstores: Place[] = [
     location: '池袋区',
     station: '池袋駅',
     googleMapsUrl: 'https://maps.google.com/?q=ジュンク堂書店+池袋本店',
-    walkingTime: '3分'
+    walkingTime: '3'
   },
   {
     id: 4,
@@ -133,7 +133,7 @@ let bookstores: Place[] = [
     location: '千代田区',
     station: '東京駅',
     googleMapsUrl: 'https://maps.google.com/?q=丸善+東京駅店',
-    walkingTime: '5分'
+    walkingTime: '5'
   },
   {
     id: 5,
@@ -141,7 +141,7 @@ let bookstores: Place[] = [
     location: '港区',
     station: '品川駅',
     googleMapsUrl: 'https://maps.google.com/?q=有隣堂+品川店',
-    walkingTime: '4分'
+    walkingTime: '4'
   },
   {
     id: 6,
@@ -149,7 +149,7 @@ let bookstores: Place[] = [
     location: '台東区',
     station: '上野駅',
     googleMapsUrl: 'https://maps.google.com/?q=書泉+上野店',
-    walkingTime: '6分'
+    walkingTime: '6'
   },
   {
     id: 7,
@@ -157,7 +157,7 @@ let bookstores: Place[] = [
     location: '千代田区',
     station: '秋葉原駅',
     googleMapsUrl: 'https://maps.google.com/?q=書泉+秋葉原店',
-    walkingTime: '2分'
+    walkingTime: '2'
   },
   {
     id: 8,
@@ -165,7 +165,7 @@ let bookstores: Place[] = [
     location: '渋谷区',
     station: '原宿駅',
     googleMapsUrl: 'https://maps.google.com/?q=ブックファースト+原宿店',
-    walkingTime: '3分'
+    walkingTime: '3'
   },
   {
     id: 9,
@@ -173,7 +173,7 @@ let bookstores: Place[] = [
     location: '目黒区',
     station: '代官山駅',
     googleMapsUrl: 'https://maps.google.com/?q=蔦屋書店+代官山店',
-    walkingTime: '7分'
+    walkingTime: '7'
   },
   {
     id: 10,
@@ -181,7 +181,7 @@ let bookstores: Place[] = [
     location: '渋谷区',
     station: '恵比寿駅',
     googleMapsUrl: 'https://maps.google.com/?q=有隣堂+恵比寿店',
-    walkingTime: '4分'
+    walkingTime: '4'
   }
 ];
 
@@ -219,13 +219,21 @@ app.post('/api/cafes', (req, res) => {
     return res.status(400).json({ error: '店舗名、Google Maps URL、最寄駅は必須です' });
   }
   
+  // 徒歩時間のバリデーション
+  if (walkingTime) {
+    const walkingTimeNum = parseInt(walkingTime);
+    if (isNaN(walkingTimeNum) || walkingTimeNum < 1 || walkingTimeNum > 60) {
+      return res.status(400).json({ error: '徒歩時間は1〜60分の整数で入力してください' });
+    }
+  }
+  
   const newCafe: Place = {
     id: cafes.length + 1,
     name,
     location: getLocationFromStation(station),
     station,
     googleMapsUrl,
-    walkingTime: walkingTime || '不明'
+    walkingTime: walkingTime || undefined
   };
   
   cafes.push(newCafe);
@@ -252,13 +260,21 @@ app.post('/api/bookstores', (req, res) => {
     return res.status(400).json({ error: '店舗名、Google Maps URL、最寄駅は必須です' });
   }
   
+  // 徒歩時間のバリデーション
+  if (walkingTime) {
+    const walkingTimeNum = parseInt(walkingTime);
+    if (isNaN(walkingTimeNum) || walkingTimeNum < 1 || walkingTimeNum > 60) {
+      return res.status(400).json({ error: '徒歩時間は1〜60分の整数で入力してください' });
+    }
+  }
+  
   const newBookstore: Place = {
     id: bookstores.length + 1,
     name,
     location: getLocationFromStation(station),
     station,
     googleMapsUrl,
-    walkingTime: walkingTime || '不明'
+    walkingTime: walkingTime || undefined
   };
   
   bookstores.push(newBookstore);

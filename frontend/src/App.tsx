@@ -127,6 +127,17 @@ function App() {
     }
   };
 
+  // 徒歩時間を表示用にフォーマットする関数
+  const formatWalkingTime = (walkingTime: string): string => {
+    if (!walkingTime) return '';
+    // 数字のみの場合は「分」を付ける
+    if (/^\d+$/.test(walkingTime)) {
+      return `${walkingTime}分`;
+    }
+    // 既に「分」が付いている場合はそのまま返す
+    return walkingTime;
+  };
+
   return (
     <div className="w-full min-h-screen bg-primary-50 flex flex-col items-center">
       {/* ヘッダー */}
@@ -244,7 +255,7 @@ function App() {
                                   <span className="text-xs text-primary-500 block">{cafe.location}</span>
                                   {cafe.walkingTime && (
                                     <span className="text-xs text-primary-600 bg-primary-100 px-2 py-1 rounded">
-                                      🚶‍♂️ {cafe.walkingTime}
+                                      🚶‍♂️ {formatWalkingTime(cafe.walkingTime)}
                                     </span>
                                   )}
                                 </div>
@@ -284,7 +295,7 @@ function App() {
                                   <span className="text-xs text-primary-500 block">{bookstore.location}</span>
                                   {bookstore.walkingTime && (
                                     <span className="text-xs text-primary-600 bg-primary-100 px-2 py-1 rounded">
-                                      🚶‍♂️ {bookstore.walkingTime}
+                                      🚶‍♂️ {formatWalkingTime(bookstore.walkingTime)}
                                     </span>
                                   )}
                                 </div>
@@ -393,14 +404,16 @@ function App() {
                 
                 <div>
                   <label className="block text-sm font-medium text-primary-700 mb-2">
-                    駅からの徒歩時間
+                    駅からの徒歩時間（分）
                   </label>
                   <input
-                    type="text"
+                    type="number"
+                    min="1"
+                    max="60"
                     value={registrationForm.walkingTime}
                     onChange={(e) => setRegistrationForm({...registrationForm, walkingTime: e.target.value})}
                     className="w-full px-3 py-2 border border-primary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
-                    placeholder="例: 5分"
+                    placeholder="例: 5"
                     required
                   />
                 </div>
