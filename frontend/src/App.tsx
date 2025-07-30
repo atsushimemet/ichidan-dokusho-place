@@ -7,6 +7,15 @@ interface Place {
   location: string;
   station: string;
   googleMapsUrl: string;
+  walkingTime?: string;
+}
+
+interface RegistrationForm {
+  type: 'cafes' | 'bookstores';
+  name: string;
+  googleMapsUrl: string;
+  station: string;
+  walkingTime: string;
 }
 
 function App() {
@@ -16,8 +25,15 @@ function App() {
   const [bookstores, setBookstores] = useState<Place[]>([])
   const [stations, setStations] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
+  const [showRegistrationForm, setShowRegistrationForm] = useState(false)
+  const [registrationForm, setRegistrationForm] = useState<RegistrationForm>({
+    type: 'cafes',
+    name: '',
+    googleMapsUrl: '',
+    station: '',
+    walkingTime: ''
+  })
 
-  // APIからデータを取得
   useEffect(() => {
     const fetchStations = async () => {
       try {
@@ -26,22 +42,12 @@ function App() {
         setStations(data);
       } catch (error) {
         console.error('Failed to fetch stations:', error);
-        // フォールバック用のデータ
         setStations([
-          '渋谷駅',
-          '新宿駅', 
-          '池袋駅',
-          '東京駅',
-          '品川駅',
-          '上野駅',
-          '秋葉原駅',
-          '原宿駅',
-          '代官山駅',
-          '恵比寿駅'
+          '渋谷駅', '新宿駅', '池袋駅', '東京駅', '品川駅',
+          '上野駅', '秋葉原駅', '原宿駅', '代官山駅', '恵比寿駅'
         ]);
       }
     };
-
     fetchStations();
   }, []);
 
@@ -54,28 +60,72 @@ function App() {
             fetch(`http://localhost:3000/api/cafes?station=${encodeURIComponent(selectedStation)}`),
             fetch(`http://localhost:3000/api/bookstores?station=${encodeURIComponent(selectedStation)}`)
           ]);
-          
+
           const cafesData = await cafesResponse.json();
           const bookstoresData = await bookstoresResponse.json();
-          
+
           setCafes(cafesData);
           setBookstores(bookstoresData);
         } catch (error) {
           console.error('Failed to fetch places:', error);
-          // エラー時は空の配列を設定
           setCafes([]);
           setBookstores([]);
         } finally {
           setLoading(false);
         }
       };
-
       fetchData();
     } else {
       setCafes([]);
       setBookstores([]);
     }
   }, [selectedStation]);
+
+  const handleRegistrationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const endpoint = registrationForm.type === 'cafes' ? '/api/cafes' : '/api/bookstores';
+      const response = await fetch(`http://localhost:3000${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: registrationForm.name,
+          googleMapsUrl: registrationForm.googleMapsUrl,
+          station: registrationForm.station,
+          walkingTime: registrationForm.walkingTime
+        }),
+      });
+
+      if (response.ok) {
+        // 登録成功後、フォームをリセット
+        setRegistrationForm({
+          type: 'cafes',
+          name: '',
+          googleMapsUrl: '',
+          station: '',
+          walkingTime: ''
+        });
+        setShowRegistrationForm(false);
+        
+        // データを再取得
+        if (selectedStation) {
+          const [cafesResponse, bookstoresResponse] = await Promise.all([
+            fetch(`http://localhost:3000/api/cafes?station=${encodeURIComponent(selectedStation)}`),
+            fetch(`http://localhost:3000/api/bookstores?station=${encodeURIComponent(selectedStation)}`)
+          ]);
+          const cafesData = await cafesResponse.json();
+          const bookstoresData = await bookstoresResponse.json();
+          setCafes(cafesData);
+          setBookstores(bookstoresData);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to register place:', error);
+    }
+  };
 
   return (
     <div className="w-full min-h-screen bg-primary-50 flex flex-col items-center">
@@ -190,7 +240,14 @@ function App() {
                             <div key={cafe.id} className="border border-primary-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                               <div className="flex justify-between items-start mb-3">
                                 <h4 className="font-medium text-primary-900 text-sm sm:text-base">{cafe.name}</h4>
-                                <span className="text-xs text-primary-500">{cafe.location}</span>
+                                <div className="text-right">
+                                  <span className="text-xs text-primary-500 block">{cafe.location}</span>
+                                  {cafe.walkingTime && (
+                                    <span className="text-xs text-primary-600 bg-primary-100 px-2 py-1 rounded">
+                                      🚶‍♂️ {cafe.walkingTime}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                               <a
                                 href={cafe.googleMapsUrl}
@@ -223,7 +280,14 @@ function App() {
                             <div key={bookstore.id} className="border border-primary-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                               <div className="flex justify-between items-start mb-3">
                                 <h4 className="font-medium text-primary-900 text-sm sm:text-base">{bookstore.name}</h4>
-                                <span className="text-xs text-primary-500">{bookstore.location}</span>
+                                <div className="text-right">
+                                  <span className="text-xs text-primary-500 block">{bookstore.location}</span>
+                                  {bookstore.walkingTime && (
+                                    <span className="text-xs text-primary-600 bg-primary-100 px-2 py-1 rounded">
+                                      🚶‍♂️ {bookstore.walkingTime}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                               <a
                                 href={bookstore.googleMapsUrl}
@@ -248,6 +312,109 @@ function App() {
             </div>
           </section>
         )}
+
+        {/* 場所登録フォーム */}
+        <section className="mb-6">
+          <div className="card">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-base sm:text-lg font-semibold text-primary-900 border-b border-primary-200 pb-2">
+                📝 新しい場所を登録
+              </h2>
+              <button
+                onClick={() => setShowRegistrationForm(!showRegistrationForm)}
+                className="btn-primary text-sm px-3 py-2"
+              >
+                {showRegistrationForm ? '閉じる' : '登録する'}
+              </button>
+            </div>
+            
+            {showRegistrationForm && (
+              <form onSubmit={handleRegistrationSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-primary-700 mb-2">
+                    種類
+                  </label>
+                  <select
+                    value={registrationForm.type}
+                    onChange={(e) => setRegistrationForm({...registrationForm, type: e.target.value as 'cafes' | 'bookstores'})}
+                    className="w-full px-3 py-2 border border-primary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                  >
+                    <option value="cafes">☕ 喫茶店</option>
+                    <option value="bookstores">📚 本屋</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-primary-700 mb-2">
+                    店舗名
+                  </label>
+                  <input
+                    type="text"
+                    value={registrationForm.name}
+                    onChange={(e) => setRegistrationForm({...registrationForm, name: e.target.value})}
+                    className="w-full px-3 py-2 border border-primary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                    placeholder="例: 喫茶 木漏れ日"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-primary-700 mb-2">
+                    Google Maps URL
+                  </label>
+                  <input
+                    type="url"
+                    value={registrationForm.googleMapsUrl}
+                    onChange={(e) => setRegistrationForm({...registrationForm, googleMapsUrl: e.target.value})}
+                    className="w-full px-3 py-2 border border-primary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                    placeholder="https://maps.google.com/?q=..."
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-primary-700 mb-2">
+                    最寄駅
+                  </label>
+                  <select
+                    value={registrationForm.station}
+                    onChange={(e) => setRegistrationForm({...registrationForm, station: e.target.value})}
+                    className="w-full px-3 py-2 border border-primary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                    required
+                  >
+                    <option value="">駅を選択してください</option>
+                    {stations.map((station) => (
+                      <option key={station} value={station}>
+                        {station}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-primary-700 mb-2">
+                    駅からの徒歩時間
+                  </label>
+                  <input
+                    type="text"
+                    value={registrationForm.walkingTime}
+                    onChange={(e) => setRegistrationForm({...registrationForm, walkingTime: e.target.value})}
+                    className="w-full px-3 py-2 border border-primary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                    placeholder="例: 5分"
+                    required
+                  />
+                </div>
+                
+                <button
+                  type="submit"
+                  className="w-full btn-primary py-3"
+                >
+                  登録する
+                </button>
+              </form>
+            )}
+          </div>
+        </section>
 
         {/* 読書ルート提案 */}
         {selectedStation && (
