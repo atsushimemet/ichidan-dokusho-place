@@ -1,60 +1,10 @@
 # ichidan-dokusho-place
-## 🧭 概要
 
-「ichidan-dokusho-place」は、読書習慣支援アプリ「一段読書」と連携し、  
-ユーザーが読書に集中できる**場所＝喫茶店や本屋**をレコメンドするプロトタイプ機能です。
+読書の空間設計を支援するプロトタイプ機能です。一段読書と連携し、読書に集中できる場所を見つけるためのアプリケーションです。
 
-インプットの質と習慣性を高めるには、単なる記録ツールでは不十分です。  
-このプロジェクトでは、「どこで読むか」「どこで本を買うか」まで含めて、**読書の空間設計を支援**します。
+## 🎯 概要
 
-## 🎯 背景と目的
-
-一段読書の最終目的は、ユーザーの**アウトプットの質を高めること**です。  
-そのためには、良質なインプットと集中できる環境が欠かせません。
-
-- 集中して読書できる場所が日常にない  
-- 本を選ぶ場所と、読む場所が分断されている  
-- 行動の導線が分かりにくく、習慣化が難しい  
-
-この課題を解消するために、本機能では「本屋」と「喫茶店」という2つの現実空間をレコメンドし、  
-**休日や隙間時間の知的行動をナビゲートする体験**を設計します。
-
-## 🧾 掲載対象の定義
-
-### 喫茶店
-
-- 木目調や落ち着いた雰囲気を持つ静かな空間
-- ブレンドコーヒー、ミックスサンド、ナポリタンなどの定番メニューがある
-- 会話・写真映えよりも、読書・思索に向いた環境
-- チェーン店は原則除外、ただし **スターバックスは例外的に許可**
-
-### 本屋
-
-- 書籍購入が可能な実店舗（オンライン限定不可）
-- 実用書／新書／文芸などを扱う書店（専門書店・大型店いずれも可）
-- 雑誌・漫画専門店、コンビニは除外
-- 駅ナカ書店は条件付きで可（静かさ重視）
-
-## 🏗 ディレクトリ構成（ベース）
-```
-.
-├── backend/ # Node.js + TypeScript（API + DB）
-├── frontend/ # React + Vite + Tailwind（検索／表示UI）
-├── docker-compose.dev.yml
-├── docs/ # 開発・運用・API仕様
-├── migrations/ # DBマイグレーション管理
-├── README.md # 本ドキュメント
-```
-
-## ⚙ 技術スタック
-
-| 区分          | 使用技術                  |
-|---------------|----------------------------|
-| フロントエンド | React + Vite + Tailwind CSS |
-| バックエンド   | Node.js + TypeScript       |
-| インフラ構成   | Docker + Supabase          |
-| データ管理     | PostgreSQL（Supabase上）   |
-| 開発支援       | Cursor, Claude             |
+インプットの質と習慣性を高めるため、「どこで読むか」「どこで本を買うか」まで含めて、読書の空間設計を支援します。
 
 ## 🚀 開発環境の起動
 
@@ -62,7 +12,7 @@
 
 ```bash
 # 開発環境を起動
-docker-compose -f docker-compose.dev.yml up --build
+docker compose -f docker-compose.dev.yml up --build
 
 # フロントエンド: http://localhost:5173
 # バックエンド: http://localhost:3000
@@ -87,52 +37,160 @@ npm run dev
 # http://localhost:3000
 ```
 
-## 🔧 開発フェーズ（プロトタイプ v0.1）
+## 🌐 Renderデプロイ
 
-### 実装機能
+### デプロイ手順
 
-- [x] ユーザー最寄駅の登録（プロフィール画面）
-- [x] 管理者による喫茶店／本屋の登録（Google Mapリンク／紹介文）
-- [x] 駅名に紐づくレコメンド一覧API（`cafes` / `bookstores`）
-- [x] 「近くの喫茶店・本屋を見る」画面（リスト表示＋駅フィルター）
-- [x] サンプルデータの事前登録（10件程度ずつ）
-- [ ] 掲載基準のドキュメント整備（docs/definition）
+1. **Renderアカウント作成**
+   - [Render](https://render.com) にサインアップ
 
-### 非対応（v0.2以降で検討）
+2. **GitHubリポジトリ連携**
+   - GitHubリポジトリをRenderに接続
+   - `feature/render-deployment` ブランチを選択
 
-- 地図表示（Leaflet.js / Google Maps API）
-- ユーザー投稿による店舗追加
-- 「静かさ」「混雑度」のレビュー機能
-- 草稿との読書スポット紐付け
-- 読書ルート自動提案
+3. **BluePrintデプロイ**
+   - `render.yaml` ファイルを使用してBluePrintデプロイ
+   - フロントエンド、バックエンド、データベースが自動で作成されます
 
-## 🚶‍♂️ ユーザー導線設計（休日読書ルート）
-1. 一段読書で書きたいテーマを確認する
-2. 「近くの本屋」を開き、気になる書籍を購入
-3. 「近くの喫茶店」を開き、落ち着いた場所で読書
-4. 一段読書に記録、インプットが蓄積
-5. 草稿が生成され、noteやXに発信
+### 環境変数設定
 
-この体験を支えるため、UIも「行動の流れ」に沿った設計とする（例：本屋詳細 → 「近くの喫茶店を探す」導線など）
+#### フロントエンド
+- `VITE_API_URL`: バックエンドのURL（自動設定）
 
-## 📈 評価指標（Metrics）
+#### バックエンド
+- `NODE_ENV`: `production`
+- `PORT`: `10000`
+- `DATABASE_URL`: PostgreSQL接続文字列（自動設定）
 
-| 指標                     | 内容                                      |
-|--------------------------|-------------------------------------------|
-| 利用率                   | レコメンド機能利用者数 / MAU             |
-| 本屋・喫茶店経由の記録数 | 該当スポット訪問後の読書記録件数         |
-| 読書継続率               | 7日/14日の記録継続率の変化                |
-| 店舗登録数               | 各エリアの登録数、カバレッジ              |
+### デプロイ後のURL
 
-## 📝 デザインとトンマナ
+- **フロントエンド**: `https://ichidan-dokusho-place-frontend.onrender.com`
+- **バックエンド**: `https://ichidan-dokusho-place-backend.onrender.com`
 
-- 「一段読書」と統一された静かで思索的なUI
-- Tailwind CSSによるミニマル設計
-- PC／モバイル双方に対応、特にスマホからの場所検索を重視
+## 📋 実装機能
 
-## 💬 開発運用メモ
+- [x] トップページの実装
+- [x] 駅選択機能
+- [x] 喫茶店・本屋の表示
+- [x] 喫茶店・本屋の登録機能
+- [x] 徒歩時間表示
+- [x] Google Maps連携
+- [x] レスポンシブデザイン
+- [x] Docker開発環境
+- [x] Renderデプロイ設定
 
-- プロジェクト名：`ichidan-dokusho-place`
-- 運営・開発：一段読書開発者本人（単独）
-- 開発支援ツール：Cursor（実装支援）、Claude（設計補助）
-- 本READMEはプロトタイプ開発のガイドラインを兼ねる
+## 🛠 技術スタック
+
+### フロントエンド
+- React 18.2.0
+- TypeScript 5.2.2
+- Vite 5.0.8
+- Tailwind CSS 3.3.6
+
+### バックエンド
+- Node.js 20
+- TypeScript 5.3.2
+- Express.js 4.18.2
+- CORS
+
+### インフラ
+- Docker & Docker Compose
+- PostgreSQL 15
+- Render (本番環境)
+
+## 📁 プロジェクト構造
+
+```
+ichidan-dokusho-place/
+├── frontend/                 # Reactフロントエンド
+│   ├── src/
+│   │   ├── App.tsx          # メインコンポーネント
+│   │   ├── index.css        # スタイル
+│   │   └── main.tsx         # エントリーポイント
+│   ├── package.json
+│   ├── tailwind.config.js   # Tailwind設定
+│   └── vite.config.ts       # Vite設定
+├── backend/                  # Expressバックエンド
+│   ├── src/
+│   │   └── index.ts         # メインサーバー
+│   ├── package.json
+│   └── tsconfig.json        # TypeScript設定
+├── docker-compose.dev.yml    # 開発環境Docker設定
+├── render.yaml              # Renderデプロイ設定
+└── README.md
+```
+
+## 🔧 開発コマンド
+
+### フロントエンド
+```bash
+cd frontend
+npm run dev      # 開発サーバー起動
+npm run build    # 本番ビルド
+npm run preview  # ビルドプレビュー
+```
+
+### バックエンド
+```bash
+cd backend
+npm run dev      # 開発サーバー起動
+npm run build    # TypeScriptコンパイル
+npm start        # 本番サーバー起動
+```
+
+## 📝 API仕様
+
+### エンドポイント
+
+#### 駅一覧取得
+```
+GET /api/stations
+```
+
+#### 喫茶店一覧取得
+```
+GET /api/cafes?station={駅名}
+```
+
+#### 本屋一覧取得
+```
+GET /api/bookstores?station={駅名}
+```
+
+#### 喫茶店登録
+```
+POST /api/cafes
+Content-Type: application/json
+
+{
+  "name": "店舗名",
+  "googleMapsUrl": "Google Maps URL",
+  "station": "最寄駅",
+  "walkingTime": "徒歩時間（分）"
+}
+```
+
+#### 本屋登録
+```
+POST /api/bookstores
+Content-Type: application/json
+
+{
+  "name": "店舗名",
+  "googleMapsUrl": "Google Maps URL",
+  "station": "最寄駅",
+  "walkingTime": "徒歩時間（分）"
+}
+```
+
+## 🤝 貢献
+
+1. このリポジトリをフォーク
+2. 機能ブランチを作成 (`git checkout -b feature/amazing-feature`)
+3. 変更をコミット (`git commit -m 'Add some amazing feature'`)
+4. ブランチにプッシュ (`git push origin feature/amazing-feature`)
+5. プルリクエストを作成
+
+## 📄 ライセンス
+
+このプロジェクトはMITライセンスの下で公開されています。

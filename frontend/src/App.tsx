@@ -18,6 +18,9 @@ interface RegistrationForm {
   walkingTime: string;
 }
 
+// API URLを環境変数から取得（開発時はlocalhost、本番時はRenderのURL）
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 function App() {
   const [selectedStation, setSelectedStation] = useState('')
   const [activeTab, setActiveTab] = useState<'cafes' | 'bookstores'>('cafes')
@@ -37,7 +40,7 @@ function App() {
   useEffect(() => {
     const fetchStations = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/stations');
+        const response = await fetch(`${API_BASE_URL}/api/stations`);
         const data = await response.json();
         setStations(data);
       } catch (error) {
@@ -57,8 +60,8 @@ function App() {
       const fetchData = async () => {
         try {
           const [cafesResponse, bookstoresResponse] = await Promise.all([
-            fetch(`http://localhost:3000/api/cafes?station=${encodeURIComponent(selectedStation)}`),
-            fetch(`http://localhost:3000/api/bookstores?station=${encodeURIComponent(selectedStation)}`)
+            fetch(`${API_BASE_URL}/api/cafes?station=${encodeURIComponent(selectedStation)}`),
+            fetch(`${API_BASE_URL}/api/bookstores?station=${encodeURIComponent(selectedStation)}`)
           ]);
 
           const cafesData = await cafesResponse.json();
@@ -86,7 +89,7 @@ function App() {
     
     try {
       const endpoint = registrationForm.type === 'cafes' ? '/api/cafes' : '/api/bookstores';
-      const response = await fetch(`http://localhost:3000${endpoint}`, {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -113,8 +116,8 @@ function App() {
         // データを再取得
         if (selectedStation) {
           const [cafesResponse, bookstoresResponse] = await Promise.all([
-            fetch(`http://localhost:3000/api/cafes?station=${encodeURIComponent(selectedStation)}`),
-            fetch(`http://localhost:3000/api/bookstores?station=${encodeURIComponent(selectedStation)}`)
+            fetch(`${API_BASE_URL}/api/cafes?station=${encodeURIComponent(selectedStation)}`),
+            fetch(`${API_BASE_URL}/api/bookstores?station=${encodeURIComponent(selectedStation)}`)
           ]);
           const cafesData = await cafesResponse.json();
           const bookstoresData = await bookstoresResponse.json();

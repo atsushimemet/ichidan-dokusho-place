@@ -1,0 +1,31 @@
+services:
+  # フロントエンドサービス
+  - type: web
+    name: ichidan-dokusho-place-frontend
+    env: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://ichidan-dokusho-place-backend.onrender.com
+
+  # バックエンドサービス
+  - type: web
+    name: ichidan-dokusho-place-backend
+    env: node
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ichidan-dokusho-place-db
+          property: connectionString
+
+databases:
+  - name: ichidan-dokusho-place-db
+    databaseName: ichidan_dokusho_place
+    user: ichidan_dokusho_place_user
