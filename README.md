@@ -37,7 +37,7 @@ npm run dev
 # http://localhost:3000
 ```
 
-## 🌐 Renderデプロイ（Neon DB使用）
+## 🌐 Renderデプロイ（Neon DB使用・無料プラン）
 
 ### デプロイ手順
 
@@ -49,13 +49,21 @@ npm run dev
 2. **Renderアカウント作成**
    - [Render](https://render.com) にサインアップ
 
-3. **GitHubリポジトリ連携**
-   - GitHubリポジトリをRenderに接続
-   - `feature/render-deployment` ブランチを選択
+3. **バックエンドサービス作成**
+   - 「New +」→「Web Service」を選択
+   - リポジトリ: `atsushimemet/ichidan-dokusho-place`
+   - ブランチ: `feature/render-deployment`
+   - Root Directory: `backend`
+   - Build Command: `npm install`
+   - Start Command: `npm start`
 
-4. **BluePrintデプロイ**
-   - `render.yaml` ファイルを使用してBluePrintデプロイ
-   - フロントエンドとバックエンドが自動で作成されます
+4. **フロントエンドサービス作成**
+   - 「New +」→「Static Site」を選択
+   - リポジトリ: `atsushimemet/ichidan-dokusho-place`
+   - ブランチ: `feature/render-deployment`
+   - Root Directory: `frontend`
+   - Build Command: `npm install && npm run build`
+   - Publish Directory: `dist`
 
 5. **環境変数設定**
    - バックエンド: `DATABASE_URL` にNeonの接続文字列を設定
@@ -157,7 +165,7 @@ ichidan-dokusho-place/
 │   ├── package.json
 │   └── tsconfig.json        # TypeScript設定
 ├── docker-compose.dev.yml    # 開発環境Docker設定
-├── render.yaml              # Renderデプロイ設定
+├── render.yaml              # Renderデプロイ設定（有料プラン用）
 ├── DEPLOYMENT.md            # 詳細デプロイ手順書
 └── README.md
 ```

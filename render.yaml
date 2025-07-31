@@ -1,3 +1,7 @@
+# Render BluePrint設定（有料プラン用）
+# 無料プランでは個別にサービスを作成してください
+# 詳細は DEPLOYMENT.md を参照
+
 services:
   # フロントエンドサービス
   - type: web
