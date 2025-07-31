@@ -268,7 +268,6 @@ function Admin() {
       <main className="w-full max-w-md px-6 py-6 flex-1">
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold text-primary-900 mb-2">管理画面</h2>
-          <p className="text-primary-600">登録されている喫茶店・本屋の管理</p>
         </div>
 
         {/* タブ */}
