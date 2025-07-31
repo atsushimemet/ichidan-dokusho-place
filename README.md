@@ -37,35 +37,74 @@ npm run dev
 # http://localhost:3000
 ```
 
-## 🌐 Renderデプロイ
+## 🌐 Renderデプロイ（Neon DB使用）
 
 ### デプロイ手順
 
-1. **Renderアカウント作成**
+1. **Neonデータベース作成**
+   - [Neon](https://neon.tech) にサインアップ
+   - プロジェクト作成: `ichidan-dokusho-place`
+   - 接続文字列を取得
+
+2. **Renderアカウント作成**
    - [Render](https://render.com) にサインアップ
 
-2. **GitHubリポジトリ連携**
+3. **GitHubリポジトリ連携**
    - GitHubリポジトリをRenderに接続
    - `feature/render-deployment` ブランチを選択
 
-3. **BluePrintデプロイ**
+4. **BluePrintデプロイ**
    - `render.yaml` ファイルを使用してBluePrintデプロイ
-   - フロントエンド、バックエンド、データベースが自動で作成されます
+   - フロントエンドとバックエンドが自動で作成されます
+
+5. **環境変数設定**
+   - バックエンド: `DATABASE_URL` にNeonの接続文字列を設定
+   - フロントエンド: `VITE_API_URL` にバックエンドのURLを設定
 
 ### 環境変数設定
 
 #### フロントエンド
-- `VITE_API_URL`: バックエンドのURL（自動設定）
+- `VITE_API_URL`: バックエンドのURL（手動設定）
 
 #### バックエンド
 - `NODE_ENV`: `production`
 - `PORT`: `10000`
-- `DATABASE_URL`: PostgreSQL接続文字列（自動設定）
+- `DATABASE_URL`: Neon PostgreSQL接続文字列（手動設定）
 
 ### デプロイ後のURL
 
 - **フロントエンド**: `https://ichidan-dokusho-place-frontend.onrender.com`
 - **バックエンド**: `https://ichidan-dokusho-place-backend.onrender.com`
+
+### データベース初期化
+
+NeonのSQLエディタで以下のSQLを実行：
+
+```sql
+-- 喫茶店テーブル
+CREATE TABLE IF NOT EXISTS cafes (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    location VARCHAR(255) NOT NULL,
+    station VARCHAR(255) NOT NULL,
+    google_maps_url TEXT NOT NULL,
+    walking_time VARCHAR(10),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 本屋テーブル
+CREATE TABLE IF NOT EXISTS bookstores (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    location VARCHAR(255) NOT NULL,
+    station VARCHAR(255) NOT NULL,
+    google_maps_url TEXT NOT NULL,
+    walking_time VARCHAR(10),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+詳細な手順は `DEPLOYMENT.md` を参照してください。
 
 ## 📋 実装機能
 
@@ -78,6 +117,7 @@ npm run dev
 - [x] レスポンシブデザイン
 - [x] Docker開発環境
 - [x] Renderデプロイ設定
+- [x] Neonデータベース対応
 
 ## 🛠 技術スタック
 
@@ -95,8 +135,9 @@ npm run dev
 
 ### インフラ
 - Docker & Docker Compose
-- PostgreSQL 15
+- PostgreSQL 15（開発環境）
 - Render (本番環境)
+- Neon (本番データベース)
 
 ## 📁 プロジェクト構造
 
@@ -117,6 +158,7 @@ ichidan-dokusho-place/
 │   └── tsconfig.json        # TypeScript設定
 ├── docker-compose.dev.yml    # 開発環境Docker設定
 ├── render.yaml              # Renderデプロイ設定
+├── DEPLOYMENT.md            # 詳細デプロイ手順書
 └── README.md
 ```
 
