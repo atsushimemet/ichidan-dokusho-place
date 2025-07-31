@@ -142,6 +142,26 @@ app.get('/api/stations', (req: express.Request, res: express.Response) => {
   res.json(stations);
 });
 
+// 喫茶店の全件取得（管理用）
+app.get('/api/cafes/all', async (req: express.Request, res: express.Response) => {
+  try {
+    const result = await pool.query('SELECT * FROM cafes ORDER BY created_at DESC');
+    
+    const cafes: Place[] = result.rows.map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      location: row.location,
+      station: row.station,
+      googleMapsUrl: row.google_maps_url,
+      walkingTime: row.walking_time
+    }));
+
+    res.json(cafes);
+  } catch (error) {
+    console.error('Error fetching all cafes:', error);
+    res.status(500).json({ error: 'Failed to fetch cafes' });
+  }
+});
 app.get('/api/cafes', async (req: express.Request, res: express.Response) => {
   try {
     const { station } = req.query;
@@ -211,6 +231,89 @@ app.post('/api/cafes', async (req: express.Request, res: express.Response) => {
   }
 });
 
+// 喫茶店の編集
+app.put('/api/cafes/:id', async (req: express.Request, res: express.Response) => {
+  try {
+    const { id } = req.params;
+    const { name, googleMapsUrl, station, walkingTime } = req.body;
+    
+    if (!name || !googleMapsUrl || !station) {
+      return res.status(400).json({ error: '店舗名、Google Maps URL、最寄駅は必須です' });
+    }
+    
+    // 徒歩時間のバリデーション
+    if (walkingTime) {
+      const walkingTimeNum = parseInt(walkingTime);
+      if (isNaN(walkingTimeNum) || walkingTimeNum < 1 || walkingTimeNum > 60) {
+        return res.status(400).json({ error: '徒歩時間は1〜60分の整数で入力してください' });
+      }
+    }
+    
+    const location = getLocationFromStation(station);
+    
+    const result = await pool.query(
+      'UPDATE cafes SET name = $1, location = $2, station = $3, google_maps_url = $4, walking_time = $5 WHERE id = $6 RETURNING *',
+      [name, location, station, googleMapsUrl, walkingTime || null, id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: '喫茶店が見つかりません' });
+    }
+    
+    const updatedCafe: Place = {
+      id: result.rows[0].id,
+      name: result.rows[0].name,
+      location: result.rows[0].location,
+      station: result.rows[0].station,
+      googleMapsUrl: result.rows[0].google_maps_url,
+      walkingTime: result.rows[0].walking_time
+    };
+    
+    res.json(updatedCafe);
+  } catch (error) {
+    console.error('Error updating cafe:', error);
+    res.status(500).json({ error: 'Failed to update cafe' });
+  }
+});
+
+// 喫茶店の削除
+app.delete('/api/cafes/:id', async (req: express.Request, res: express.Response) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await pool.query('DELETE FROM cafes WHERE id = $1 RETURNING *', [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: '喫茶店が見つかりません' });
+    }
+    
+    res.json({ message: '喫茶店を削除しました', id: parseInt(id) });
+  } catch (error) {
+    console.error('Error deleting cafe:', error);
+    res.status(500).json({ error: 'Failed to delete cafe' });
+  }
+});
+
+// 本屋の全件取得（管理用）
+app.get('/api/bookstores/all', async (req: express.Request, res: express.Response) => {
+  try {
+    const result = await pool.query('SELECT * FROM bookstores ORDER BY created_at DESC');
+    
+    const bookstores: Place[] = result.rows.map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      location: row.location,
+      station: row.station,
+      googleMapsUrl: row.google_maps_url,
+      walkingTime: row.walking_time
+    }));
+
+    res.json(bookstores);
+  } catch (error) {
+    console.error('Error fetching all bookstores:', error);
+    res.status(500).json({ error: 'Failed to fetch bookstores' });
+  }
+});
 app.get('/api/bookstores', async (req: express.Request, res: express.Response) => {
   try {
     const { station } = req.query;
@@ -277,6 +380,69 @@ app.post('/api/bookstores', async (req: express.Request, res: express.Response) 
   } catch (error) {
     console.error('Error creating bookstore:', error);
     res.status(500).json({ error: 'Failed to create bookstore' });
+  }
+});
+
+// 本屋の編集
+app.put('/api/bookstores/:id', async (req: express.Request, res: express.Response) => {
+  try {
+    const { id } = req.params;
+    const { name, googleMapsUrl, station, walkingTime } = req.body;
+    
+    if (!name || !googleMapsUrl || !station) {
+      return res.status(400).json({ error: '店舗名、Google Maps URL、最寄駅は必須です' });
+    }
+    
+    // 徒歩時間のバリデーション
+    if (walkingTime) {
+      const walkingTimeNum = parseInt(walkingTime);
+      if (isNaN(walkingTimeNum) || walkingTimeNum < 1 || walkingTimeNum > 60) {
+        return res.status(400).json({ error: '徒歩時間は1〜60分の整数で入力してください' });
+      }
+    }
+    
+    const location = getLocationFromStation(station);
+    
+    const result = await pool.query(
+      'UPDATE bookstores SET name = $1, location = $2, station = $3, google_maps_url = $4, walking_time = $5 WHERE id = $6 RETURNING *',
+      [name, location, station, googleMapsUrl, walkingTime || null, id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: '本屋が見つかりません' });
+    }
+    
+    const updatedBookstore: Place = {
+      id: result.rows[0].id,
+      name: result.rows[0].name,
+      location: result.rows[0].location,
+      station: result.rows[0].station,
+      googleMapsUrl: result.rows[0].google_maps_url,
+      walkingTime: result.rows[0].walking_time
+    };
+    
+    res.json(updatedBookstore);
+  } catch (error) {
+    console.error('Error updating bookstore:', error);
+    res.status(500).json({ error: 'Failed to update bookstore' });
+  }
+});
+
+// 本屋の削除
+app.delete('/api/bookstores/:id', async (req: express.Request, res: express.Response) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await pool.query('DELETE FROM bookstores WHERE id = $1 RETURNING *', [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: '本屋が見つかりません' });
+    }
+    
+    res.json({ message: '本屋を削除しました', id: parseInt(id) });
+  } catch (error) {
+    console.error('Error deleting bookstore:', error);
+    res.status(500).json({ error: 'Failed to delete bookstore' });
   }
 });
 

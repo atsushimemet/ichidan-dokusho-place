@@ -8,14 +8,12 @@
     "strict": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "allowJs": true,
-    "noImplicitAny": false,
-    "moduleResolution": "node",
-    "types": ["node"],
-    "typeRoots": ["./node_modules/@types"]
-  },
-  "ts-node": {
-    "esm": false
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "types": ["node", "pg"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
