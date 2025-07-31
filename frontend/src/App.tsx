@@ -18,6 +18,9 @@ interface RegistrationForm {
   walkingTime: string;
 }
 
+// API URLを環境変数から取得（開発時はlocalhost、本番時はRenderのURL）
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 function App() {
   const [selectedStation, setSelectedStation] = useState('')
   const [activeTab, setActiveTab] = useState<'cafes' | 'bookstores'>('cafes')
@@ -37,7 +40,7 @@ function App() {
   useEffect(() => {
     const fetchStations = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/stations');
+        const response = await fetch(`${API_BASE_URL}/api/stations`);
         const data = await response.json();
         setStations(data);
       } catch (error) {
@@ -57,8 +60,8 @@ function App() {
       const fetchData = async () => {
         try {
           const [cafesResponse, bookstoresResponse] = await Promise.all([
-            fetch(`http://localhost:3000/api/cafes?station=${encodeURIComponent(selectedStation)}`),
-            fetch(`http://localhost:3000/api/bookstores?station=${encodeURIComponent(selectedStation)}`)
+            fetch(`${API_BASE_URL}/api/cafes?station=${encodeURIComponent(selectedStation)}`),
+            fetch(`${API_BASE_URL}/api/bookstores?station=${encodeURIComponent(selectedStation)}`)
           ]);
 
           const cafesData = await cafesResponse.json();
@@ -86,7 +89,7 @@ function App() {
     
     try {
       const endpoint = registrationForm.type === 'cafes' ? '/api/cafes' : '/api/bookstores';
-      const response = await fetch(`http://localhost:3000${endpoint}`, {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -100,7 +103,21 @@ function App() {
       });
 
       if (response.ok) {
-        // 登録成功後、フォームをリセット
+        // 登録成功後、データを再取得
+        if (selectedStation) {
+          const [cafesResponse, bookstoresResponse] = await Promise.all([
+            fetch(`${API_BASE_URL}/api/cafes?station=${encodeURIComponent(selectedStation)}`),
+            fetch(`${API_BASE_URL}/api/bookstores?station=${encodeURIComponent(selectedStation)}`)
+          ]);
+
+          const cafesData = await cafesResponse.json();
+          const bookstoresData = await bookstoresResponse.json();
+
+          setCafes(cafesData);
+          setBookstores(bookstoresData);
+        }
+
+        // フォームをリセット
         setRegistrationForm({
           type: 'cafes',
           name: '',
@@ -109,33 +126,19 @@ function App() {
           walkingTime: ''
         });
         setShowRegistrationForm(false);
-        
-        // データを再取得
-        if (selectedStation) {
-          const [cafesResponse, bookstoresResponse] = await Promise.all([
-            fetch(`http://localhost:3000/api/cafes?station=${encodeURIComponent(selectedStation)}`),
-            fetch(`http://localhost:3000/api/bookstores?station=${encodeURIComponent(selectedStation)}`)
-          ]);
-          const cafesData = await cafesResponse.json();
-          const bookstoresData = await bookstoresResponse.json();
-          setCafes(cafesData);
-          setBookstores(bookstoresData);
-        }
+        alert('登録しました！');
+      } else {
+        const error = await response.json();
+        alert(`登録に失敗しました: ${error.error}`);
       }
     } catch (error) {
       console.error('Failed to register place:', error);
+      alert('登録に失敗しました');
     }
   };
 
-  // 徒歩時間を表示用にフォーマットする関数
   const formatWalkingTime = (walkingTime: string): string => {
-    if (!walkingTime) return '';
-    // 数字のみの場合は「分」を付ける
-    if (/^\d+$/.test(walkingTime)) {
-      return `${walkingTime}分`;
-    }
-    // 既に「分」が付いている場合はそのまま返す
-    return walkingTime;
+    return walkingTime ? `${walkingTime}分` : '';
   };
 
   return (
@@ -338,7 +341,7 @@ function App() {
                 {showRegistrationForm ? '閉じる' : '登録する'}
               </button>
             </div>
-            
+
             {showRegistrationForm && (
               <form onSubmit={handleRegistrationSubmit} className="space-y-4">
                 <div>
@@ -354,7 +357,7 @@ function App() {
                     <option value="bookstores">📚 本屋</option>
                   </select>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-primary-700 mb-2">
                     店舗名
@@ -368,7 +371,7 @@ function App() {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-primary-700 mb-2">
                     Google Maps URL
@@ -382,7 +385,7 @@ function App() {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-primary-700 mb-2">
                     最寄駅
@@ -401,7 +404,7 @@ function App() {
                     ))}
                   </select>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-primary-700 mb-2">
                     駅からの徒歩時間（分）
@@ -417,7 +420,7 @@ function App() {
                     required
                   />
                 </div>
-                
+
                 <button
                   type="submit"
                   className="w-full btn-primary py-3"
@@ -466,13 +469,21 @@ function App() {
       {/* フッター */}
       <footer className="w-full bg-white border-t border-primary-200 mt-8">
         <div className="max-w-md mx-auto px-6 py-4">
-          <p className="text-center text-primary-600 text-xs">
-            © 2024 ichidan-dokusho-place. 読書の空間設計を支援するプロトタイプ機能です。
-          </p>
+          <div className="flex justify-between items-center">
+            <p className="text-primary-600 text-xs">
+              © 2024 ichidan-dokusho-place
+            </p>
+            <a
+              href="/admin"
+              className="text-xs text-primary-500 hover:text-primary-600 transition-colors"
+            >
+              管理画面
+            </a>
+          </div>
         </div>
       </footer>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
