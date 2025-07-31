@@ -373,57 +373,64 @@ function App() {
           </section>
         )}
 
-        {/* 場所登録フォーム */}
+        {/* 登録セクション */}
         <section className="mb-6">
           <div className="card">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-base sm:text-lg font-semibold text-primary-900 border-b border-primary-200 pb-2">
-                📝 新しい場所を登録
-              </h2>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => setShowStationForm(!showStationForm)}
-                  className="btn-primary text-sm px-3 py-2"
-                >
-                  {showStationForm ? '閉じる' : '駅を追加'}
-                </button>
-                <button
-                  onClick={() => setShowRegistrationForm(!showRegistrationForm)}
-                  className="btn-primary text-sm px-3 py-2"
-                >
-                  {showRegistrationForm ? '閉じる' : '場所を登録'}
-                </button>
-              </div>
+            <h2 className="text-base sm:text-lg font-semibold text-primary-900 border-b border-primary-200 pb-2 mb-4">
+              📝 新しい場所を登録
+            </h2>
+            
+            {/* ボタンセクション */}
+            <div className="flex flex-col sm:flex-row gap-2 mb-4">
+              <button
+                onClick={() => setShowStationForm(!showStationForm)}
+                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  showStationForm
+                    ? 'bg-primary-100 text-primary-700 border border-primary-300'
+                    : 'bg-primary-600 text-white hover:bg-primary-700'
+                }`}
+              >
+                🚉 駅
+              </button>
+              <button
+                onClick={() => setShowRegistrationForm(!showRegistrationForm)}
+                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  showRegistrationForm
+                    ? 'bg-primary-100 text-primary-700 border border-primary-300'
+                    : 'bg-primary-600 text-white hover:bg-primary-700'
+                }`}
+              >
+                📍 場所
+              </button>
             </div>
 
             {/* 駅登録フォーム */}
             {showStationForm && (
-              <div className="mb-6 p-4 bg-primary-50 rounded-lg">
-                <h3 className="text-sm font-medium text-primary-900 mb-3">🚉 新しい駅を登録</h3>
+              <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
                 <form onSubmit={handleStationSubmit} className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-medium text-primary-700 mb-1">
+                      <label className="block text-xs font-medium text-blue-700 mb-1">
                         駅名
                       </label>
                       <input
                         type="text"
                         value={stationForm.name}
                         onChange={(e) => setStationForm({...stationForm, name: e.target.value})}
-                        className="w-full px-3 py-2 border border-primary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                        className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                         placeholder="例: 新宿駅"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-primary-700 mb-1">
+                      <label className="block text-xs font-medium text-blue-700 mb-1">
                         地域
                       </label>
                       <input
                         type="text"
                         value={stationForm.location}
                         onChange={(e) => setStationForm({...stationForm, location: e.target.value})}
-                        className="w-full px-3 py-2 border border-primary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                        className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                         placeholder="例: 新宿区"
                         required
                       />
@@ -431,9 +438,9 @@ function App() {
                   </div>
                   <button
                     type="submit"
-                    className="w-full btn-primary py-2 text-sm"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors"
                   >
-                    駅を登録する
+                    登録
                   </button>
                 </form>
               </div>
@@ -522,7 +529,7 @@ function App() {
                   type="submit"
                   className="w-full btn-primary py-3"
                 >
-                  登録する
+                  登録
                 </button>
               </form>
             )}
