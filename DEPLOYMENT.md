@@ -1,8 +1,8 @@
-# Render デプロイ手順書（Neon DB使用・無料プラン）
+# Render デプロイ手順書（Neon DB使用・Docker環境・無料プラン）
 
 ## 📋 概要
 
-このドキュメントでは、ichidan-dokusho-placeアプリケーションをRenderの無料プランでデプロイし、Neonデータベースを使用する手順を説明します。
+このドキュメントでは、ichidan-dokusho-placeアプリケーションをRenderの無料プランでデプロイし、Neonデータベースを使用する手順を説明します。Docker環境を使用して開発環境との一貫性を保ちます。
 
 ## 🚀 デプロイ手順
 
@@ -44,23 +44,27 @@
 | 項目 | 値 |
 |------|-----|
 | **Name** | `ichidan-dokusho-place-backend` |
-| **Environment** | `Node` |
+| **Environment** | `Docker` |
 | **Region** | `Oregon (US West)` |
 | **Branch** | `feature/render-deployment` |
 | **Root Directory** | `backend` |
-| **Build Command** | `npm install` |
-| **Start Command** | `npm start` |
+| **Dockerfile Path** | `Dockerfile` |
 
-**重要**: Start Commandは必ず`npm start`にしてください。`node dist/index.js`ではありません。
+**重要**: Environmentは必ず`Docker`を選択してください。`Node`ではありません。
 
 #### 3.3 環境変数設定
 「Environment Variables」セクションで以下を追加：
 
-| キー | 値 |
-|------|-----|
-| `NODE_ENV` | `production` |
-| `PORT` | `10000` |
-| `DATABASE_URL` | Neonの接続文字列 |
+| キー | 値 | 説明 |
+|------|-----|------|
+| `NODE_ENV` | `production` | 本番環境フラグ |
+| `PORT` | `10000` | アプリケーションのポート番号 |
+| `DATABASE_URL` | Neonの接続文字列 | Neon PostgreSQL接続文字列 |
+
+**DATABASE_URLの例:**
+```
+postgresql://username:password@ep-xxx.ap-northeast-1.aws.neon.tech/ichidan_dokusho_place?sslmode=require
+```
 
 #### 3.4 デプロイ実行
 1. 「Create Web Service」をクリック
@@ -88,9 +92,11 @@
 #### 4.3 環境変数設定
 「Environment Variables」セクションで以下を追加：
 
-| キー | 値 |
-|------|-----|
-| `VITE_API_URL` | `https://ichidan-dokusho-place-backend.onrender.com` |
+| キー | 値 | 説明 |
+|------|-----|------|
+| `VITE_API_URL` | `https://ichidan-dokusho-place-backend.onrender.com` | バックエンドAPIのURL |
+
+**重要**: バックエンドのURLは、実際に作成したバックエンドサービスのURLに合わせてください。
 
 #### 4.4 デプロイ実行
 1. 「Create Static Site」をクリック
@@ -160,16 +166,26 @@ INSERT INTO bookstores (name, location, station, google_maps_url, walking_time) 
 
 ### よくある問題
 
-#### 1. データベース接続エラー
+#### 1. Docker環境でのTypeScriptコンパイルエラー
+```
+Error: Cannot find name 'process'
+Error: Cannot find name 'console'
+```
+**解決方法:**
+- Dockerfileが正しく設定されているか確認
+- `backend/Dockerfile`が存在するか確認
+- Node.js 18-alpineが使用されているか確認
+
+#### 2. データベース接続エラー
 ```
 Error: connect ECONNREFUSED
 ```
 **解決方法:**
 - Neonの接続文字列が正しいか確認
-- ファイアウォール設定を確認
+- `DATABASE_URL`環境変数が設定されているか確認
 - Neonプロジェクトが有効か確認
 
-#### 2. 環境変数エラー
+#### 3. 環境変数エラー
 ```
 Error: DATABASE_URL is not defined
 ```
@@ -177,7 +193,7 @@ Error: DATABASE_URL is not defined
 - Renderダッシュボードで環境変数を確認
 - Neonの接続文字列が正しく設定されているか確認
 
-#### 3. CORSエラー
+#### 4. CORSエラー
 ```
 Error: CORS policy blocked
 ```
@@ -185,24 +201,22 @@ Error: CORS policy blocked
 - バックエンドのCORS設定を確認
 - フロントエンドのAPI URLが正しいか確認
 
-#### 4. ビルドエラー
+#### 5. Dockerビルドエラー
 ```
 Error: Build failed
 ```
 **解決方法:**
-- ログを確認して具体的なエラーを特定
-- `package.json`の依存関係を確認
-- Node.jsバージョンの互換性を確認
+- Dockerfileの構文を確認
+- マルチステージビルドの設定を確認
+- 依存関係のインストールを確認
 
-#### 5. TypeScriptコンパイルエラー
+#### 6. ポート設定エラー
 ```
-Error: Cannot find module '/opt/render/project/src/backend/dist/index.js'
+Error: No open ports detected
 ```
 **解決方法:**
-- Renderダッシュボードで「Settings」→「Start Command」を確認
-- Start Commandが`npm start`になっているか確認
-- `package.json`のstartスクリプトが`npm run build && node dist/index.js`になっているか確認
-- TypeScriptの設定ファイル（tsconfig.json）が正しいか確認
+- Dockerfileで`EXPOSE 10000`が設定されているか確認
+- `PORT`環境変数が`10000`に設定されているか確認
 
 ### ログ確認方法
 
@@ -218,6 +232,7 @@ Error: Cannot find module '/opt/render/project/src/backend/dist/index.js'
 
 ### ヘルスチェック
 - バックエンド: `/health` エンドポイント
+- Docker: ヘルスチェック機能内蔵
 - フロントエンド: 静的ファイル配信
 
 ### バックアップ

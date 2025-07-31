@@ -13,12 +13,11 @@ services:
       - key: VITE_API_URL
         value: https://ichidan-dokusho-place-backend.onrender.com
 
-  # バックエンドサービス
+  # バックエンドサービス（Docker環境）
   - type: web
     name: ichidan-dokusho-place-backend
-    env: node
-    buildCommand: cd backend && npm install
-    startCommand: cd backend && npm start
+    env: docker
+    dockerfilePath: ./backend/Dockerfile.dev
     envVars:
       - key: NODE_ENV
         value: production
