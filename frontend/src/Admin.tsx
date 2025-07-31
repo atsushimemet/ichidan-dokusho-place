@@ -157,91 +157,102 @@ function Admin() {
   // ログイン画面
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="w-full min-h-screen bg-primary-50 flex flex-col items-center">
         {/* ヘッダー */}
-        <header className="bg-white shadow-sm border-b">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">いちだん読書場所</h1>
-                <p className="text-sm text-gray-600">駅周辺の読書に適した場所を探そう</p>
-              </div>
+        <header className="w-full bg-white shadow-sm border-b border-primary-200 sticky top-0 z-10">
+          <div className="max-w-md mx-auto px-6 py-4 sm:py-6">
+            <div className="text-center">
+              <h1 className="text-xl sm:text-2xl font-bold text-primary-900 border-b-2 border-primary-200 pb-2">
+                ichidan-dokusho-place
+              </h1>
+              <p className="text-primary-600 mt-3 text-sm sm:text-base">
+                読書に集中できる場所を見つけよう
+              </p>
+              <p className="text-xs text-primary-500 mt-1">一段読書と連携</p>
             </div>
           </div>
         </header>
 
         {/* ログインフォーム */}
-        <main className="flex-1">
-          <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-16">
-            <div className="bg-white rounded-lg shadow-md p-8">
-              <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">管理画面ログイン</h2>
-                <p className="text-gray-600">管理者パスワードを入力してください</p>
+        <main className="w-full max-w-md px-6 py-6 flex-1">
+          <div className="card">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-primary-900 mb-2">管理画面ログイン</h2>
+              <p className="text-primary-600">管理者パスワードを入力してください</p>
+            </div>
+
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-primary-700 mb-2">
+                  パスワード
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-primary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  placeholder="パスワードを入力"
+                  required
+                />
+                {passwordError && (
+                  <p className="mt-1 text-sm text-red-600">{passwordError}</p>
+                )}
               </div>
 
-              <form onSubmit={handleLogin} className="space-y-6">
-                <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                    パスワード
-                  </label>
-                  <input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    placeholder="パスワードを入力"
-                    required
-                  />
-                  {passwordError && (
-                    <p className="mt-1 text-sm text-red-600">{passwordError}</p>
-                  )}
-                </div>
+              <button
+                type="submit"
+                className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              >
+                ログイン
+              </button>
+            </form>
 
-                <button
-                  type="submit"
-                  className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                >
-                  ログイン
-                </button>
-              </form>
-
-              <div className="mt-6 text-center">
-                <button
-                  onClick={() => navigate('/')}
-                  className="text-sm text-primary-600 hover:text-primary-500"
-                >
-                  ← トップページに戻る
-                </button>
-              </div>
+            <div className="mt-6 text-center">
+              <button
+                onClick={() => navigate('/')}
+                className="text-sm text-primary-600 hover:text-primary-500"
+              >
+                ← トップページに戻る
+              </button>
             </div>
           </div>
         </main>
+
+        {/* フッター */}
+        <footer className="w-full bg-white border-t border-primary-200 mt-8">
+          <div className="max-w-md mx-auto px-6 py-4">
+            <p className="text-center text-primary-600 text-xs">
+              © 2024 ichidan-dokusho-place. 読書の空間設計を支援するプロトタイプ機能です。
+            </p>
+          </div>
+        </footer>
       </div>
     );
   }
 
   // 管理画面
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="w-full min-h-screen bg-primary-50 flex flex-col items-center">
       {/* ヘッダー */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div>
-              <button
-                onClick={() => navigate('/')}
-                className="text-2xl font-bold text-gray-900 hover:text-primary-600 transition-colors"
-              >
-                いちだん読書場所
-              </button>
-              <p className="text-sm text-gray-600">駅周辺の読書に適した場所を探そう</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">管理者</span>
+      <header className="w-full bg-white shadow-sm border-b border-primary-200 sticky top-0 z-10">
+        <div className="max-w-md mx-auto px-6 py-4 sm:py-6">
+          <div className="text-center">
+            <button
+              onClick={() => navigate('/')}
+              className="text-xl sm:text-2xl font-bold text-primary-900 border-b-2 border-primary-200 pb-2 hover:text-primary-600 transition-colors"
+            >
+              ichidan-dokusho-place
+            </button>
+            <p className="text-primary-600 mt-3 text-sm sm:text-base">
+              読書に集中できる場所を見つけよう
+            </p>
+            <p className="text-xs text-primary-500 mt-1">一段読書と連携</p>
+            <div className="mt-4 flex justify-center items-center space-x-4">
+              <span className="text-sm text-primary-600">管理者</span>
               <button
                 onClick={() => setIsAuthenticated(false)}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                className="inline-flex items-center px-3 py-2 border border-primary-300 text-xs font-medium rounded-md text-primary-700 bg-white hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
               >
                 ログアウト
               </button>
@@ -251,111 +262,118 @@ function Admin() {
       </header>
 
       {/* メインコンテンツ */}
-      <main className="flex-1">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">管理画面</h2>
-            <p className="text-gray-600">登録されている喫茶店・本屋の管理</p>
-          </div>
+      <main className="w-full max-w-md px-6 py-6 flex-1">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold text-primary-900 mb-2">管理画面</h2>
+          <p className="text-primary-600">登録されている喫茶店・本屋の管理</p>
+        </div>
 
-          {/* タブ */}
-          <div className="flex justify-center mb-8">
-            <div className="flex space-x-1 bg-white rounded-lg p-1 shadow-sm">
-              <button
-                onClick={() => setActiveTab('cafes')}
-                className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === 'cafes'
-                    ? 'bg-primary-500 text-white'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                喫茶店 ({cafes.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('bookstores')}
-                className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === 'bookstores'
-                    ? 'bg-primary-500 text-white'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                本屋 ({bookstores.length})
-              </button>
-            </div>
-          </div>
-
-          {/* データ一覧 */}
-          <div className="bg-white rounded-lg shadow">
-            {loading ? (
-              <div className="p-8 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto"></div>
-                <p className="mt-2 text-gray-600">読み込み中...</p>
-              </div>
-            ) : currentData.length === 0 ? (
-              <div className="p-8 text-center">
-                <p className="text-gray-500">登録された{activeTab === 'cafes' ? '喫茶店' : '本屋'}がありません</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        店舗名
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        最寄駅
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        徒歩時間
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        操作
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {currentData.map((item) => (
-                      <tr key={item.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{item.name}</div>
-                          <div className="text-sm text-gray-500">{item.location}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {item.station}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {item.walkingTime && (
-                            <span className="inline-flex items-center">
-                              🚶‍♂️ {formatWalkingTime(item.walkingTime)}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => handleEdit(item)}
-                              className="text-primary-600 hover:text-primary-900 bg-primary-50 hover:bg-primary-100 px-3 py-1 rounded-md text-xs"
-                            >
-                              編集
-                            </button>
-                            <button
-                              onClick={() => handleDelete(item.id, activeTab)}
-                              className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md text-xs"
-                            >
-                              削除
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+        {/* タブ */}
+        <div className="flex justify-center mb-8">
+          <div className="flex space-x-1 bg-white rounded-lg p-1 shadow-sm">
+            <button
+              onClick={() => setActiveTab('cafes')}
+              className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'cafes'
+                  ? 'bg-primary-500 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              喫茶店 ({cafes.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('bookstores')}
+              className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'bookstores'
+                  ? 'bg-primary-500 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              本屋 ({bookstores.length})
+            </button>
           </div>
         </div>
+
+        {/* データ一覧 */}
+        <div className="bg-white rounded-lg shadow">
+          {loading ? (
+            <div className="p-8 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto"></div>
+              <p className="mt-2 text-gray-600">読み込み中...</p>
+            </div>
+          ) : currentData.length === 0 ? (
+            <div className="p-8 text-center">
+              <p className="text-gray-500">登録された{activeTab === 'cafes' ? '喫茶店' : '本屋'}がありません</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      店舗名
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      最寄駅
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      徒歩時間
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      操作
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {currentData.map((item) => (
+                    <tr key={item.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{item.name}</div>
+                        <div className="text-sm text-gray-500">{item.location}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {item.station}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {item.walkingTime && (
+                          <span className="inline-flex items-center">
+                            🚶‍♂️ {formatWalkingTime(item.walkingTime)}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleEdit(item)}
+                            className="text-primary-600 hover:text-primary-900 bg-primary-50 hover:bg-primary-100 px-3 py-1 rounded-md text-xs"
+                          >
+                            編集
+                          </button>
+                          <button
+                            onClick={() => handleDelete(item.id, activeTab)}
+                            className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md text-xs"
+                          >
+                            削除
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </main>
+
+      {/* フッター */}
+      <footer className="w-full bg-white border-t border-primary-200 mt-8">
+        <div className="max-w-md mx-auto px-6 py-4">
+          <p className="text-center text-primary-600 text-xs">
+            © 2024 ichidan-dokusho-place. 読書の空間設計を支援するプロトタイプ機能です。
+          </p>
+        </div>
+      </footer>
 
       {/* 編集モーダル */}
       {editingItem && (
