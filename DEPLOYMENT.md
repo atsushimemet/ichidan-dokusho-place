@@ -192,6 +192,14 @@ Error: Build failed
 - `package.json`の依存関係を確認
 - Node.jsバージョンの互換性を確認
 
+#### 5. TypeScriptコンパイルエラー
+```
+Error: Cannot find module '/opt/render/project/src/backend/dist/index.js'
+```
+**解決方法:**
+- `package.json`のstartスクリプトが`npm run build && node dist/index.js`になっているか確認
+- TypeScriptの設定ファイル（tsconfig.json）が正しいか確認
+
 ### ログ確認方法
 
 1. Renderダッシュボードでサービスを選択
