@@ -39,6 +39,12 @@ interface Place {
   walkingTime?: string;
 }
 
+interface Station {
+  id: number;
+  name: string;
+  location: string;
+}
+
 // データベース初期化
 async function initializeDatabase() {
   try {
@@ -67,6 +73,15 @@ async function initializeDatabase() {
       )
     `);
 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS stations (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL UNIQUE,
+        location VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     // サンプルデータの挿入（テーブルが空の場合のみ）
     const cafesCount = await pool.query('SELECT COUNT(*) FROM cafes');
     if (parseInt(cafesCount.rows[0].count) === 0) {
@@ -89,6 +104,23 @@ async function initializeDatabase() {
         ('ジュンク堂書店 池袋本店', '池袋区', '池袋駅', 'https://maps.google.com/?q=ジュンク堂書店+池袋本店', '1'),
         ('丸善 丸の内本店', '千代田区', '東京駅', 'https://maps.google.com/?q=丸善+丸の内本店', '5'),
         ('有隣堂 品川店', '港区', '品川駅', 'https://maps.google.com/?q=有隣堂+品川店', '4')
+      `);
+    }
+
+    const stationsCount = await pool.query('SELECT COUNT(*) FROM stations');
+    if (parseInt(stationsCount.rows[0].count) === 0) {
+      await pool.query(`
+        INSERT INTO stations (name, location) VALUES
+        ('渋谷駅', '渋谷区'),
+        ('新宿駅', '新宿区'),
+        ('池袋駅', '池袋区'),
+        ('東京駅', '千代田区'),
+        ('品川駅', '港区'),
+        ('上野駅', '台東区'),
+        ('秋葉原駅', '千代田区'),
+        ('原宿駅', '渋谷区'),
+        ('代官山駅', '渋谷区'),
+        ('恵比寿駅', '渋谷区')
       `);
     }
 
@@ -134,12 +166,139 @@ app.get('/health', async (req: express.Request, res: express.Response) => {
   }
 });
 
-app.get('/api/stations', (req: express.Request, res: express.Response) => {
-  const stations = [
-    '渋谷駅', '新宿駅', '池袋駅', '東京駅', '品川駅',
-    '上野駅', '秋葉原駅', '原宿駅', '代官山駅', '恵比寿駅'
-  ];
-  res.json(stations);
+// 駅一覧取得（フロントエンド用）
+app.get('/api/stations', async (req: express.Request, res: express.Response) => {
+  try {
+    const result = await pool.query('SELECT name FROM stations ORDER BY name');
+    const stations = result.rows.map((row: any) => row.name);
+    res.json(stations);
+  } catch (error) {
+    console.error('Error fetching stations:', error);
+    // フォールバック: ハードコードされた駅リスト
+    const stations = [
+      '渋谷駅', '新宿駅', '池袋駅', '東京駅', '品川駅',
+      '上野駅', '秋葉原駅', '原宿駅', '代官山駅', '恵比寿駅'
+    ];
+    res.json(stations);
+  }
+});
+
+// 駅一覧取得（管理用）
+app.get('/api/stations/all', async (req: express.Request, res: express.Response) => {
+  try {
+    const result = await pool.query('SELECT * FROM stations ORDER BY name');
+    
+    const stations: Station[] = result.rows.map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      location: row.location
+    }));
+
+    res.json(stations);
+  } catch (error) {
+    console.error('Error fetching all stations:', error);
+    res.status(500).json({ error: 'Failed to fetch stations' });
+  }
+});
+
+// 駅登録
+app.post('/api/stations', async (req: express.Request, res: express.Response) => {
+  try {
+    const { name, location } = req.body;
+    
+    if (!name || !location) {
+      return res.status(400).json({ error: '駅名と地域は必須です' });
+    }
+    
+    const result = await pool.query(
+      'INSERT INTO stations (name, location) VALUES ($1, $2) RETURNING *',
+      [name, location]
+    );
+    
+    const newStation: Station = {
+      id: result.rows[0].id,
+      name: result.rows[0].name,
+      location: result.rows[0].location
+    };
+    
+    res.status(201).json(newStation);
+  } catch (error: any) {
+    if (error.code === '23505') { // UNIQUE制約違反
+      return res.status(400).json({ error: 'この駅名は既に登録されています' });
+    }
+    console.error('Error creating station:', error);
+    res.status(500).json({ error: 'Failed to create station' });
+  }
+});
+
+// 駅編集
+app.put('/api/stations/:id', async (req: express.Request, res: express.Response) => {
+  try {
+    const { id } = req.params;
+    const { name, location } = req.body;
+    
+    if (!name || !location) {
+      return res.status(400).json({ error: '駅名と地域は必須です' });
+    }
+    
+    const result = await pool.query(
+      'UPDATE stations SET name = $1, location = $2 WHERE id = $3 RETURNING *',
+      [name, location, id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: '駅が見つかりません' });
+    }
+    
+    const updatedStation: Station = {
+      id: result.rows[0].id,
+      name: result.rows[0].name,
+      location: result.rows[0].location
+    };
+    
+    res.json(updatedStation);
+  } catch (error: any) {
+    if (error.code === '23505') { // UNIQUE制約違反
+      return res.status(400).json({ error: 'この駅名は既に登録されています' });
+    }
+    console.error('Error updating station:', error);
+    res.status(500).json({ error: 'Failed to update station' });
+  }
+});
+
+// 駅削除
+app.delete('/api/stations/:id', async (req: express.Request, res: express.Response) => {
+  try {
+    const { id } = req.params;
+    
+    // 駅を使用している喫茶店・本屋があるかチェック
+    const cafesResult = await pool.query('SELECT COUNT(*) FROM cafes WHERE station = (SELECT name FROM stations WHERE id = $1)', [id]);
+    const bookstoresResult = await pool.query('SELECT COUNT(*) FROM bookstores WHERE station = (SELECT name FROM stations WHERE id = $1)', [id]);
+    
+    const cafesCount = parseInt(cafesResult.rows[0].count);
+    const bookstoresCount = parseInt(bookstoresResult.rows[0].count);
+    
+    if (cafesCount > 0 || bookstoresCount > 0) {
+      return res.status(400).json({ 
+        error: 'この駅は使用中のため削除できません',
+        details: {
+          cafes: cafesCount,
+          bookstores: bookstoresCount
+        }
+      });
+    }
+    
+    const result = await pool.query('DELETE FROM stations WHERE id = $1 RETURNING *', [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: '駅が見つかりません' });
+    }
+    
+    res.json({ message: '駅を削除しました', id: parseInt(id) });
+  } catch (error) {
+    console.error('Error deleting station:', error);
+    res.status(500).json({ error: 'Failed to delete station' });
+  }
 });
 
 // 喫茶店の全件取得（管理用）
