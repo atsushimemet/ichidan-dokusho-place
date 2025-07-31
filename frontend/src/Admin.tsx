@@ -38,9 +38,10 @@ function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
-  const [activeTab, setActiveTab] = useState<'cafes' | 'bookstores' | 'stations'>('cafes');
+  const [activeTab, setActiveTab] = useState<'cafes' | 'bookstores' | 'bars' | 'stations'>('cafes');
   const [cafes, setCafes] = useState<Place[]>([]);
   const [bookstores, setBookstores] = useState<Place[]>([]);
+  const [bars, setBars] = useState<Place[]>([]);
   const [stations, setStations] = useState<Station[]>([]);
   const [loading, setLoading] = useState(false);
   const [editingItem, setEditingItem] = useState<EditForm | null>(null);
@@ -66,18 +67,21 @@ function Admin() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [cafesResponse, bookstoresResponse, stationsResponse] = await Promise.all([
+      const [cafesResponse, bookstoresResponse, barsResponse, stationsResponse] = await Promise.all([
         fetch(`${API_BASE_URL}/api/cafes/all`),
         fetch(`${API_BASE_URL}/api/bookstores/all`),
+        fetch(`${API_BASE_URL}/api/bars/all`),
         fetch(`${API_BASE_URL}/api/stations/all`)
       ]);
 
       const cafesData = await cafesResponse.json();
       const bookstoresData = await bookstoresResponse.json();
+      const barsData = await barsResponse.json();
       const stationsData = await stationsResponse.json();
 
       setCafes(cafesData);
       setBookstores(bookstoresData);
+      setBars(barsData);
       setStations(stationsData);
     } catch (error) {
       console.error('Failed to fetch data:', error);
@@ -93,7 +97,7 @@ function Admin() {
   }, [isAuthenticated]);
 
   // 削除処理
-  const handleDelete = async (id: number, type: 'cafes' | 'bookstores') => {
+  const handleDelete = async (id: number, type: 'cafes' | 'bookstores' | 'bars') => {
     if (!confirm('本当に削除しますか？')) return;
 
     try {
@@ -259,7 +263,7 @@ function Admin() {
     return walkingTime ? `${walkingTime}分` : '';
   };
 
-  const currentData = activeTab === 'cafes' ? cafes : activeTab === 'bookstores' ? bookstores : stations;
+  const currentData = activeTab === 'cafes' ? cafes : activeTab === 'bookstores' ? bookstores : activeTab === 'bars' ? bars : stations;
 
   // ログイン画面
   if (!isAuthenticated) {
@@ -455,6 +459,16 @@ function Admin() {
               本屋 ({bookstores.length})
             </button>
             <button
+              onClick={() => setActiveTab('bars')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'bars'
+                  ? 'bg-primary-500 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              バー ({bars.length})
+            </button>
+            <button
               onClick={() => setActiveTab('stations')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 activeTab === 'stations'
@@ -477,7 +491,7 @@ function Admin() {
           ) : currentData.length === 0 ? (
             <div className="p-8 text-center">
               <p className="text-gray-500">
-                登録された{activeTab === 'cafes' ? '喫茶店' : activeTab === 'bookstores' ? '本屋' : '駅'}がありません
+                登録された{activeTab === 'cafes' ? '喫茶店' : activeTab === 'bookstores' ? '本屋' : activeTab === 'bars' ? 'バー' : '駅'}がありません
               </p>
             </div>
           ) : (

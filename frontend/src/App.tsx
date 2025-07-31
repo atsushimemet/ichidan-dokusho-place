@@ -11,7 +11,7 @@ interface Place {
 }
 
 interface RegistrationForm {
-  type: 'cafes' | 'bookstores';
+  type: 'cafes' | 'bookstores' | 'bars';
   name: string;
   googleMapsUrl: string;
   station: string;
@@ -28,9 +28,10 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 function App() {
   const [selectedStation, setSelectedStation] = useState('')
-  const [activeTab, setActiveTab] = useState<'cafes' | 'bookstores'>('cafes')
+  const [activeTab, setActiveTab] = useState<'cafes' | 'bookstores' | 'bars'>('cafes')
   const [cafes, setCafes] = useState<Place[]>([])
   const [bookstores, setBookstores] = useState<Place[]>([])
+  const [bars, setBars] = useState<Place[]>([])
   const [stations, setStations] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [showRegistrationForm, setShowRegistrationForm] = useState(false)
@@ -69,20 +70,24 @@ function App() {
       setLoading(true);
       const fetchData = async () => {
         try {
-          const [cafesResponse, bookstoresResponse] = await Promise.all([
+          const [cafesResponse, bookstoresResponse, barsResponse] = await Promise.all([
             fetch(`${API_BASE_URL}/api/cafes?station=${encodeURIComponent(selectedStation)}`),
-            fetch(`${API_BASE_URL}/api/bookstores?station=${encodeURIComponent(selectedStation)}`)
+            fetch(`${API_BASE_URL}/api/bookstores?station=${encodeURIComponent(selectedStation)}`),
+            fetch(`${API_BASE_URL}/api/bars?station=${encodeURIComponent(selectedStation)}`)
           ]);
 
           const cafesData = await cafesResponse.json();
           const bookstoresData = await bookstoresResponse.json();
+          const barsData = await barsResponse.json();
 
           setCafes(cafesData);
           setBookstores(bookstoresData);
+          setBars(barsData);
         } catch (error) {
           console.error('Failed to fetch places:', error);
           setCafes([]);
           setBookstores([]);
+          setBars([]);
         } finally {
           setLoading(false);
         }
@@ -91,6 +96,7 @@ function App() {
     } else {
       setCafes([]);
       setBookstores([]);
+      setBars([]);
     }
   }, [selectedStation]);
 
@@ -98,7 +104,7 @@ function App() {
     e.preventDefault();
     
     try {
-      const endpoint = registrationForm.type === 'cafes' ? '/api/cafes' : '/api/bookstores';
+      const endpoint = registrationForm.type === 'cafes' ? '/api/cafes' : registrationForm.type === 'bookstores' ? '/api/bookstores' : '/api/bars';
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: {
@@ -115,16 +121,19 @@ function App() {
       if (response.ok) {
         // 登録成功後、データを再取得
         if (selectedStation) {
-          const [cafesResponse, bookstoresResponse] = await Promise.all([
+          const [cafesResponse, bookstoresResponse, barsResponse] = await Promise.all([
             fetch(`${API_BASE_URL}/api/cafes?station=${encodeURIComponent(selectedStation)}`),
-            fetch(`${API_BASE_URL}/api/bookstores?station=${encodeURIComponent(selectedStation)}`)
+            fetch(`${API_BASE_URL}/api/bookstores?station=${encodeURIComponent(selectedStation)}`),
+            fetch(`${API_BASE_URL}/api/bars?station=${encodeURIComponent(selectedStation)}`)
           ]);
 
           const cafesData = await cafesResponse.json();
           const bookstoresData = await bookstoresResponse.json();
+          const barsData = await barsResponse.json();
 
           setCafes(cafesData);
           setBookstores(bookstoresData);
+          setBars(barsData);
         }
 
         // フォームをリセット
@@ -279,6 +288,16 @@ function App() {
                 >
                   📚 本屋
                 </button>
+                <button
+                  onClick={() => setActiveTab('bars')}
+                  className={`flex-1 px-4 py-3 font-medium transition-colors duration-200 text-sm ${
+                    activeTab === 'bars'
+                      ? 'text-primary-700 border-b-2 border-primary-600'
+                      : 'text-primary-500 hover:text-primary-700'
+                  }`}
+                >
+                  🍺 バー
+                </button>
               </div>
 
               {loading ? (
@@ -363,6 +382,46 @@ function App() {
                       ) : (
                         <div className="text-center py-8 text-primary-500">
                           <p className="text-sm">この駅周辺の本屋はまだ登録されていません。</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* バー一覧 */}
+                  {activeTab === 'bars' && (
+                    <div>
+                      <h3 className="text-base sm:text-lg font-semibold text-primary-900 mb-3 border-b border-primary-200 pb-2">
+                        {selectedStation}周辺のバー
+                      </h3>
+                      {bars.length > 0 ? (
+                        <div className="space-y-3">
+                          {bars.map((bar) => (
+                            <div key={bar.id} className="border border-primary-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                              <div className="flex justify-between items-start mb-3">
+                                <h4 className="font-medium text-primary-900 text-sm sm:text-base">{bar.name}</h4>
+                                <div className="text-right">
+                                  <span className="text-xs text-primary-500 block">{bar.station}</span>
+                                  {bar.walkingTime && (
+                                    <span className="text-xs text-primary-600 bg-primary-100 px-2 py-1 rounded">
+                                      🚶‍♂️ {formatWalkingTime(bar.walkingTime)}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <a
+                                href={bar.googleMapsUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary-600 hover:text-primary-700 text-sm font-medium inline-flex items-center"
+                              >
+                                📍 Google Mapsで見る →
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-primary-500">
+                          <p className="text-sm">この駅周辺のバーはまだ登録されていません。</p>
                         </div>
                       )}
                     </div>
@@ -454,11 +513,12 @@ function App() {
                   </label>
                   <select
                     value={registrationForm.type}
-                    onChange={(e) => setRegistrationForm({...registrationForm, type: e.target.value as 'cafes' | 'bookstores'})}
+                    onChange={(e) => setRegistrationForm({...registrationForm, type: e.target.value as 'cafes' | 'bookstores' | 'bars'})}
                     className="w-full px-3 py-2 border border-primary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
                   >
                     <option value="cafes">☕ 喫茶店</option>
                     <option value="bookstores">📚 本屋</option>
+                    <option value="bars">🍺 バー</option>
                   </select>
                 </div>
 
