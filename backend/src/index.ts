@@ -88,7 +88,7 @@ async function initializeDatabase() {
 // データベース初期化を実行
 initializeDatabase();
 
-app.get('/', (req, res) => {
+app.get('/', (req: express.Request, res: express.Response) => {
   res.json({
     message: 'ichidan-dokusho-place API',
     version: '1.0.0',
@@ -101,7 +101,7 @@ app.get('/', (req, res) => {
   });
 });
 
-app.get('/health', async (req, res) => {
+app.get('/health', async (req: express.Request, res: express.Response) => {
   try {
     const cafesResult = await pool.query('SELECT COUNT(*) FROM cafes');
     const bookstoresResult = await pool.query('SELECT COUNT(*) FROM bookstores');
@@ -112,7 +112,7 @@ app.get('/health', async (req, res) => {
       cafes: parseInt(cafesResult.rows[0].count),
       bookstores: parseInt(bookstoresResult.rows[0].count)
     });
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({
       status: 'unhealthy',
       database: 'disconnected',
@@ -121,7 +121,7 @@ app.get('/health', async (req, res) => {
   }
 });
 
-app.get('/api/stations', (req, res) => {
+app.get('/api/stations', (req: express.Request, res: express.Response) => {
   const stations = [
     '渋谷駅', '新宿駅', '池袋駅', '東京駅', '品川駅',
     '上野駅', '秋葉原駅', '原宿駅', '代官山駅', '恵比寿駅'
@@ -129,7 +129,7 @@ app.get('/api/stations', (req, res) => {
   res.json(stations);
 });
 
-app.get('/api/cafes', async (req, res) => {
+app.get('/api/cafes', async (req: express.Request, res: express.Response) => {
   try {
     const { station } = req.query;
     let query = 'SELECT * FROM cafes';
@@ -143,7 +143,7 @@ app.get('/api/cafes', async (req, res) => {
     query += ' ORDER BY created_at DESC';
     const result = await pool.query(query, params);
     
-    const cafes: Place[] = result.rows.map(row => ({
+    const cafes: Place[] = result.rows.map((row: any) => ({
       id: row.id,
       name: row.name,
       location: row.location,
@@ -159,7 +159,7 @@ app.get('/api/cafes', async (req, res) => {
   }
 });
 
-app.post('/api/cafes', async (req, res) => {
+app.post('/api/cafes', async (req: express.Request, res: express.Response) => {
   try {
     const { name, googleMapsUrl, station, walkingTime } = req.body;
     
@@ -198,7 +198,7 @@ app.post('/api/cafes', async (req, res) => {
   }
 });
 
-app.get('/api/bookstores', async (req, res) => {
+app.get('/api/bookstores', async (req: express.Request, res: express.Response) => {
   try {
     const { station } = req.query;
     let query = 'SELECT * FROM bookstores';
@@ -212,7 +212,7 @@ app.get('/api/bookstores', async (req, res) => {
     query += ' ORDER BY created_at DESC';
     const result = await pool.query(query, params);
     
-    const bookstores: Place[] = result.rows.map(row => ({
+    const bookstores: Place[] = result.rows.map((row: any) => ({
       id: row.id,
       name: row.name,
       location: row.location,
@@ -228,7 +228,7 @@ app.get('/api/bookstores', async (req, res) => {
   }
 });
 
-app.post('/api/bookstores', async (req, res) => {
+app.post('/api/bookstores', async (req: express.Request, res: express.Response) => {
   try {
     const { name, googleMapsUrl, station, walkingTime } = req.body;
     

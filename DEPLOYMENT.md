@@ -51,6 +51,8 @@
 | **Build Command** | `npm install` |
 | **Start Command** | `npm start` |
 
+**重要**: Start Commandは必ず`npm start`にしてください。`node dist/index.js`ではありません。
+
 #### 3.3 環境変数設定
 「Environment Variables」セクションで以下を追加：
 
@@ -197,6 +199,8 @@ Error: Build failed
 Error: Cannot find module '/opt/render/project/src/backend/dist/index.js'
 ```
 **解決方法:**
+- Renderダッシュボードで「Settings」→「Start Command」を確認
+- Start Commandが`npm start`になっているか確認
 - `package.json`のstartスクリプトが`npm run build && node dist/index.js`になっているか確認
 - TypeScriptの設定ファイル（tsconfig.json）が正しいか確認
 
