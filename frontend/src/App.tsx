@@ -11,7 +11,7 @@ interface Place {
 }
 
 interface RegistrationForm {
-  type: 'cafes' | 'bookstores';
+  type: 'cafes' | 'bookstores' | 'bars';
   name: string;
   googleMapsUrl: string;
   station: string;
@@ -28,9 +28,10 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 function App() {
   const [selectedStation, setSelectedStation] = useState('')
-  const [activeTab, setActiveTab] = useState<'cafes' | 'bookstores'>('cafes')
+  const [activeTab, setActiveTab] = useState<'cafes' | 'bookstores' | 'bars'>('cafes')
   const [cafes, setCafes] = useState<Place[]>([])
   const [bookstores, setBookstores] = useState<Place[]>([])
+  const [bars, setBars] = useState<Place[]>([])
   const [stations, setStations] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [showRegistrationForm, setShowRegistrationForm] = useState(false)
@@ -69,20 +70,24 @@ function App() {
       setLoading(true);
       const fetchData = async () => {
         try {
-          const [cafesResponse, bookstoresResponse] = await Promise.all([
+          const [cafesResponse, bookstoresResponse, barsResponse] = await Promise.all([
             fetch(`${API_BASE_URL}/api/cafes?station=${encodeURIComponent(selectedStation)}`),
-            fetch(`${API_BASE_URL}/api/bookstores?station=${encodeURIComponent(selectedStation)}`)
+            fetch(`${API_BASE_URL}/api/bookstores?station=${encodeURIComponent(selectedStation)}`),
+            fetch(`${API_BASE_URL}/api/bars?station=${encodeURIComponent(selectedStation)}`)
           ]);
 
           const cafesData = await cafesResponse.json();
           const bookstoresData = await bookstoresResponse.json();
+          const barsData = await barsResponse.json();
 
           setCafes(cafesData);
           setBookstores(bookstoresData);
+          setBars(barsData);
         } catch (error) {
           console.error('Failed to fetch places:', error);
           setCafes([]);
           setBookstores([]);
+          setBars([]);
         } finally {
           setLoading(false);
         }
@@ -91,6 +96,7 @@ function App() {
     } else {
       setCafes([]);
       setBookstores([]);
+      setBars([]);
     }
   }, [selectedStation]);
 
@@ -98,7 +104,7 @@ function App() {
     e.preventDefault();
     
     try {
-      const endpoint = registrationForm.type === 'cafes' ? '/api/cafes' : '/api/bookstores';
+      const endpoint = registrationForm.type === 'cafes' ? '/api/cafes' : registrationForm.type === 'bookstores' ? '/api/bookstores' : '/api/bars';
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: {
@@ -115,16 +121,19 @@ function App() {
       if (response.ok) {
         // 登録成功後、データを再取得
         if (selectedStation) {
-          const [cafesResponse, bookstoresResponse] = await Promise.all([
+          const [cafesResponse, bookstoresResponse, barsResponse] = await Promise.all([
             fetch(`${API_BASE_URL}/api/cafes?station=${encodeURIComponent(selectedStation)}`),
-            fetch(`${API_BASE_URL}/api/bookstores?station=${encodeURIComponent(selectedStation)}`)
+            fetch(`${API_BASE_URL}/api/bookstores?station=${encodeURIComponent(selectedStation)}`),
+            fetch(`${API_BASE_URL}/api/bars?station=${encodeURIComponent(selectedStation)}`)
           ]);
 
           const cafesData = await cafesResponse.json();
           const bookstoresData = await bookstoresResponse.json();
+          const barsData = await barsResponse.json();
 
           setCafes(cafesData);
           setBookstores(bookstoresData);
+          setBars(barsData);
         }
 
         // フォームをリセット
@@ -216,7 +225,7 @@ function App() {
               インプットの質と習慣性を高めるため、「どこで読むか」「どこで本を買うか」まで含めて、
               読書の空間設計を支援します。
             </p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="bg-primary-50 p-3 rounded-lg">
                 <h3 className="font-medium text-primary-900 mb-1 text-sm">📚 本屋</h3>
                 <p className="text-xs text-primary-700">
@@ -227,6 +236,12 @@ function App() {
                 <h3 className="font-medium text-primary-900 mb-1 text-sm">☕ 喫茶店</h3>
                 <p className="text-xs text-primary-700">
                   読書に集中できる静かな空間
+                </p>
+              </div>
+              <div className="bg-primary-50 p-3 rounded-lg">
+                <h3 className="font-medium text-primary-900 mb-1 text-sm">🍺 バー</h3>
+                <p className="text-xs text-primary-700">
+                  リラックスしながら読書できる空間
                 </p>
               </div>
             </div>
@@ -278,6 +293,16 @@ function App() {
                   }`}
                 >
                   📚 本屋
+                </button>
+                <button
+                  onClick={() => setActiveTab('bars')}
+                  className={`flex-1 px-4 py-3 font-medium transition-colors duration-200 text-sm ${
+                    activeTab === 'bars'
+                      ? 'text-primary-700 border-b-2 border-primary-600'
+                      : 'text-primary-500 hover:text-primary-700'
+                  }`}
+                >
+                  🍺 バー
                 </button>
               </div>
 
@@ -363,6 +388,46 @@ function App() {
                       ) : (
                         <div className="text-center py-8 text-primary-500">
                           <p className="text-sm">この駅周辺の本屋はまだ登録されていません。</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* バー一覧 */}
+                  {activeTab === 'bars' && (
+                    <div>
+                      <h3 className="text-base sm:text-lg font-semibold text-primary-900 mb-3 border-b border-primary-200 pb-2">
+                        {selectedStation}周辺のバー
+                      </h3>
+                      {bars.length > 0 ? (
+                        <div className="space-y-3">
+                          {bars.map((bar) => (
+                            <div key={bar.id} className="border border-primary-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                              <div className="flex justify-between items-start mb-3">
+                                <h4 className="font-medium text-primary-900 text-sm sm:text-base">{bar.name}</h4>
+                                <div className="text-right">
+                                  <span className="text-xs text-primary-500 block">{bar.station}</span>
+                                  {bar.walkingTime && (
+                                    <span className="text-xs text-primary-600 bg-primary-100 px-2 py-1 rounded">
+                                      🚶‍♂️ {formatWalkingTime(bar.walkingTime)}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <a
+                                href={bar.googleMapsUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary-600 hover:text-primary-700 text-sm font-medium inline-flex items-center"
+                              >
+                                📍 Google Mapsで見る →
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-primary-500">
+                          <p className="text-sm">この駅周辺のバーはまだ登録されていません。</p>
                         </div>
                       )}
                     </div>
@@ -454,11 +519,12 @@ function App() {
                   </label>
                   <select
                     value={registrationForm.type}
-                    onChange={(e) => setRegistrationForm({...registrationForm, type: e.target.value as 'cafes' | 'bookstores'})}
+                    onChange={(e) => setRegistrationForm({...registrationForm, type: e.target.value as 'cafes' | 'bookstores' | 'bars'})}
                     className="w-full px-3 py-2 border border-primary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
                   >
                     <option value="cafes">☕ 喫茶店</option>
                     <option value="bookstores">📚 本屋</option>
+                    <option value="bars">🍺 バー</option>
                   </select>
                 </div>
 
@@ -536,12 +602,12 @@ function App() {
           </div>
         </section>
 
-        {/* 読書ルート提案 */}
+        {/* 読書の空間設計を支援 */}
         {selectedStation && (
           <section className="mb-6">
             <div className="card bg-gradient-to-r from-primary-50 to-primary-100">
               <h2 className="text-base sm:text-lg font-semibold text-primary-900 mb-3 border-b border-primary-200 pb-2">
-                🚶‍♂️ 読書ルート提案
+                📚 読書の空間設計を支援
               </h2>
               <div className="space-y-2 text-xs sm:text-sm text-primary-700">
                 <div className="flex items-start">
@@ -558,11 +624,34 @@ function App() {
                 </div>
                 <div className="flex items-start">
                   <span className="w-5 h-5 bg-primary-600 text-white rounded-full flex items-center justify-center text-xs mr-2 mt-0.5 flex-shrink-0">4</span>
-                  <span>一段読書に記録、インプットが蓄積</span>
+                  <span>「近くのバー」でリラックスしながら読書</span>
                 </div>
                 <div className="flex items-start">
                   <span className="w-5 h-5 bg-primary-600 text-white rounded-full flex items-center justify-center text-xs mr-2 mt-0.5 flex-shrink-0">5</span>
+                  <span>一段読書に記録、インプットが蓄積</span>
+                </div>
+                <div className="flex items-start">
+                  <span className="w-5 h-5 bg-primary-600 text-white rounded-full flex items-center justify-center text-xs mr-2 mt-0.5 flex-shrink-0">6</span>
                   <span>草稿が生成され、noteやXに発信</span>
+                </div>
+              </div>
+              
+              {/* 場所の特徴説明 */}
+              <div className="mt-4 pt-4 border-t border-primary-200">
+                <h3 className="text-sm font-medium text-primary-800 mb-2">各場所の特徴</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <div className="bg-white rounded-lg p-3 border border-primary-200">
+                    <div className="font-medium text-primary-700 mb-1">📚 本屋</div>
+                    <div className="text-primary-600">書籍購入、新刊発見、読書環境の確認</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-primary-200">
+                    <div className="font-medium text-primary-700 mb-1">☕ 喫茶店</div>
+                    <div className="text-primary-600">集中読書、静寂な環境、長時間滞在</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-primary-200">
+                    <div className="font-medium text-primary-700 mb-1">🍺 バー</div>
+                    <div className="text-primary-600">リラックス読書、夜間利用、社交的読書</div>
+                  </div>
                 </div>
               </div>
             </div>

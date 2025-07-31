@@ -82,6 +82,18 @@ async function initializeDatabase() {
       )
     `);
 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS bars (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        location VARCHAR(255) NOT NULL,
+        station VARCHAR(255) NOT NULL,
+        google_maps_url TEXT NOT NULL,
+        walking_time VARCHAR(10),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     // サンプルデータの挿入（テーブルが空の場合のみ）
     const cafesCount = await pool.query('SELECT COUNT(*) FROM cafes');
     if (parseInt(cafesCount.rows[0].count) === 0) {
@@ -121,6 +133,18 @@ async function initializeDatabase() {
         ('原宿駅', '渋谷区'),
         ('代官山駅', '渋谷区'),
         ('恵比寿駅', '渋谷区')
+      `);
+    }
+
+    const barsCount = await pool.query('SELECT COUNT(*) FROM bars');
+    if (parseInt(barsCount.rows[0].count) === 0) {
+      await pool.query(`
+        INSERT INTO bars (name, location, station, google_maps_url, walking_time) VALUES
+        ('バー 読書空間', '渋谷区', '渋谷駅', 'https://maps.google.com/?q=バー+読書空間+渋谷', '3'),
+        ('BAR 静寂', '新宿区', '新宿駅', 'https://maps.google.com/?q=BAR+静寂+新宿', '4'),
+        ('酒場 古書', '池袋区', '池袋駅', 'https://maps.google.com/?q=酒場+古書+池袋', '2'),
+        ('PUB 読書', '千代田区', '東京駅', 'https://maps.google.com/?q=PUB+読書+東京', '5'),
+        ('バー 木漏れ日', '港区', '品川駅', 'https://maps.google.com/?q=バー+木漏れ日+品川', '3')
       `);
     }
 
@@ -602,6 +626,159 @@ app.delete('/api/bookstores/:id', async (req: express.Request, res: express.Resp
   } catch (error) {
     console.error('Error deleting bookstore:', error);
     res.status(500).json({ error: 'Failed to delete bookstore' });
+  }
+});
+
+// バーの全件取得（管理用）
+app.get('/api/bars/all', async (req: express.Request, res: express.Response) => {
+  try {
+    const result = await pool.query('SELECT * FROM bars ORDER BY created_at DESC');
+    
+    const bars: Place[] = result.rows.map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      location: row.location,
+      station: row.station,
+      googleMapsUrl: row.google_maps_url,
+      walkingTime: row.walking_time
+    }));
+
+    res.json(bars);
+  } catch (error) {
+    console.error('Error fetching all bars:', error);
+    res.status(500).json({ error: 'Failed to fetch bars' });
+  }
+});
+
+app.get('/api/bars', async (req: express.Request, res: express.Response) => {
+  try {
+    const { station } = req.query;
+    let query = 'SELECT * FROM bars';
+    let params: string[] = [];
+
+    if (station) {
+      query += ' WHERE station = $1';
+      params.push(station as string);
+    }
+
+    query += ' ORDER BY created_at DESC';
+    const result = await pool.query(query, params);
+    
+    const bars: Place[] = result.rows.map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      location: row.location,
+      station: row.station,
+      googleMapsUrl: row.google_maps_url,
+      walkingTime: row.walking_time
+    }));
+
+    res.json(bars);
+  } catch (error) {
+    console.error('Error fetching bars:', error);
+    res.status(500).json({ error: 'Failed to fetch bars' });
+  }
+});
+
+app.post('/api/bars', async (req: express.Request, res: express.Response) => {
+  try {
+    const { name, googleMapsUrl, station, walkingTime } = req.body;
+    
+    if (!name || !googleMapsUrl || !station) {
+      return res.status(400).json({ error: '店舗名、Google Maps URL、最寄駅は必須です' });
+    }
+    
+    // 徒歩時間のバリデーション
+    if (walkingTime) {
+      const walkingTimeNum = parseInt(walkingTime);
+      if (isNaN(walkingTimeNum) || walkingTimeNum < 1 || walkingTimeNum > 60) {
+        return res.status(400).json({ error: '徒歩時間は1〜60分の整数で入力してください' });
+      }
+    }
+    
+    const location = getLocationFromStation(station);
+    
+    const result = await pool.query(
+      'INSERT INTO bars (name, location, station, google_maps_url, walking_time) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [name, location, station, googleMapsUrl, walkingTime || null]
+    );
+    
+    const newBar: Place = {
+      id: result.rows[0].id,
+      name: result.rows[0].name,
+      location: result.rows[0].location,
+      station: result.rows[0].station,
+      googleMapsUrl: result.rows[0].google_maps_url,
+      walkingTime: result.rows[0].walking_time
+    };
+    
+    res.status(201).json(newBar);
+  } catch (error) {
+    console.error('Error creating bar:', error);
+    res.status(500).json({ error: 'Failed to create bar' });
+  }
+});
+
+// バーの編集
+app.put('/api/bars/:id', async (req: express.Request, res: express.Response) => {
+  try {
+    const { id } = req.params;
+    const { name, googleMapsUrl, station, walkingTime } = req.body;
+    
+    if (!name || !googleMapsUrl || !station) {
+      return res.status(400).json({ error: '店舗名、Google Maps URL、最寄駅は必須です' });
+    }
+    
+    // 徒歩時間のバリデーション
+    if (walkingTime) {
+      const walkingTimeNum = parseInt(walkingTime);
+      if (isNaN(walkingTimeNum) || walkingTimeNum < 1 || walkingTimeNum > 60) {
+        return res.status(400).json({ error: '徒歩時間は1〜60分の整数で入力してください' });
+      }
+    }
+    
+    const location = getLocationFromStation(station);
+    
+    const result = await pool.query(
+      'UPDATE bars SET name = $1, location = $2, station = $3, google_maps_url = $4, walking_time = $5 WHERE id = $6 RETURNING *',
+      [name, location, station, googleMapsUrl, walkingTime || null, id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'バーが見つかりません' });
+    }
+    
+    const updatedBar: Place = {
+      id: result.rows[0].id,
+      name: result.rows[0].name,
+      location: result.rows[0].location,
+      station: result.rows[0].station,
+      googleMapsUrl: result.rows[0].google_maps_url,
+      walkingTime: result.rows[0].walking_time
+    };
+    
+    res.json(updatedBar);
+  } catch (error) {
+    console.error('Error updating bar:', error);
+    res.status(500).json({ error: 'Failed to update bar' });
+  }
+});
+
+// バーの削除
+app.delete('/api/bars/:id', async (req: express.Request, res: express.Response) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await pool.query('DELETE FROM bars WHERE id = $1 RETURNING *', [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'バーが見つかりません' });
+    }
+    
+    res.json({ message: 'バーを削除しました', id: parseInt(id) });
+  } catch (error) {
+    console.error('Error deleting bar:', error);
+    res.status(500).json({ error: 'Failed to delete bar' });
   }
 });
 
