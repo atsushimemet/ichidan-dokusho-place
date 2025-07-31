@@ -18,6 +18,11 @@ interface RegistrationForm {
   walkingTime: string;
 }
 
+interface StationForm {
+  name: string;
+  location: string;
+}
+
 // API URLを環境変数から取得（開発時はlocalhost、本番時はRenderのURL）
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -29,12 +34,17 @@ function App() {
   const [stations, setStations] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [showRegistrationForm, setShowRegistrationForm] = useState(false)
+  const [showStationForm, setShowStationForm] = useState(false)
   const [registrationForm, setRegistrationForm] = useState<RegistrationForm>({
     type: 'cafes',
     name: '',
     googleMapsUrl: '',
     station: '',
     walkingTime: ''
+  })
+  const [stationForm, setStationForm] = useState<StationForm>({
+    name: '',
+    location: ''
   })
 
   useEffect(() => {
@@ -134,6 +144,42 @@ function App() {
     } catch (error) {
       console.error('Failed to register place:', error);
       alert('登録に失敗しました');
+    }
+  };
+
+  // 駅登録処理
+  const handleStationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/stations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(stationForm),
+      });
+
+      if (response.ok) {
+        // 駅登録成功後、駅一覧を再取得
+        const stationsResponse = await fetch(`${API_BASE_URL}/api/stations`);
+        const stationsData = await stationsResponse.json();
+        setStations(stationsData);
+
+        // フォームをリセット
+        setStationForm({
+          name: '',
+          location: ''
+        });
+        setShowStationForm(false);
+        alert('駅を登録しました！');
+      } else {
+        const error = await response.json();
+        alert(`駅の登録に失敗しました: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Failed to register station:', error);
+      alert('駅の登録に失敗しました');
     }
   };
 
@@ -334,13 +380,64 @@ function App() {
               <h2 className="text-base sm:text-lg font-semibold text-primary-900 border-b border-primary-200 pb-2">
                 📝 新しい場所を登録
               </h2>
-              <button
-                onClick={() => setShowRegistrationForm(!showRegistrationForm)}
-                className="btn-primary text-sm px-3 py-2"
-              >
-                {showRegistrationForm ? '閉じる' : '登録する'}
-              </button>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setShowStationForm(!showStationForm)}
+                  className="btn-primary text-sm px-3 py-2"
+                >
+                  {showStationForm ? '閉じる' : '駅を追加'}
+                </button>
+                <button
+                  onClick={() => setShowRegistrationForm(!showRegistrationForm)}
+                  className="btn-primary text-sm px-3 py-2"
+                >
+                  {showRegistrationForm ? '閉じる' : '場所を登録'}
+                </button>
+              </div>
             </div>
+
+            {/* 駅登録フォーム */}
+            {showStationForm && (
+              <div className="mb-6 p-4 bg-primary-50 rounded-lg">
+                <h3 className="text-sm font-medium text-primary-900 mb-3">🚉 新しい駅を登録</h3>
+                <form onSubmit={handleStationSubmit} className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-primary-700 mb-1">
+                        駅名
+                      </label>
+                      <input
+                        type="text"
+                        value={stationForm.name}
+                        onChange={(e) => setStationForm({...stationForm, name: e.target.value})}
+                        className="w-full px-3 py-2 border border-primary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                        placeholder="例: 新宿駅"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-primary-700 mb-1">
+                        地域
+                      </label>
+                      <input
+                        type="text"
+                        value={stationForm.location}
+                        onChange={(e) => setStationForm({...stationForm, location: e.target.value})}
+                        className="w-full px-3 py-2 border border-primary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                        placeholder="例: 新宿区"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full btn-primary py-2 text-sm"
+                  >
+                    駅を登録する
+                  </button>
+                </form>
+              </div>
+            )}
 
             {showRegistrationForm && (
               <form onSubmit={handleRegistrationSubmit} className="space-y-4">
