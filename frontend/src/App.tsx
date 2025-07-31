@@ -225,7 +225,7 @@ function App() {
               インプットの質と習慣性を高めるため、「どこで読むか」「どこで本を買うか」まで含めて、
               読書の空間設計を支援します。
             </p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="bg-primary-50 p-3 rounded-lg">
                 <h3 className="font-medium text-primary-900 mb-1 text-sm">📚 本屋</h3>
                 <p className="text-xs text-primary-700">
@@ -236,6 +236,12 @@ function App() {
                 <h3 className="font-medium text-primary-900 mb-1 text-sm">☕ 喫茶店</h3>
                 <p className="text-xs text-primary-700">
                   読書に集中できる静かな空間
+                </p>
+              </div>
+              <div className="bg-primary-50 p-3 rounded-lg">
+                <h3 className="font-medium text-primary-900 mb-1 text-sm">🍺 バー</h3>
+                <p className="text-xs text-primary-700">
+                  リラックスしながら読書できる空間
                 </p>
               </div>
             </div>
