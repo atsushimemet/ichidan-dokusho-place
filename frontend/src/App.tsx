@@ -596,12 +596,12 @@ function App() {
           </div>
         </section>
 
-        {/* 読書ルート提案 */}
+        {/* 読書の空間設計を支援 */}
         {selectedStation && (
           <section className="mb-6">
             <div className="card bg-gradient-to-r from-primary-50 to-primary-100">
               <h2 className="text-base sm:text-lg font-semibold text-primary-900 mb-3 border-b border-primary-200 pb-2">
-                🚶‍♂️ 読書ルート提案
+                📚 読書の空間設計を支援
               </h2>
               <div className="space-y-2 text-xs sm:text-sm text-primary-700">
                 <div className="flex items-start">
@@ -618,11 +618,34 @@ function App() {
                 </div>
                 <div className="flex items-start">
                   <span className="w-5 h-5 bg-primary-600 text-white rounded-full flex items-center justify-center text-xs mr-2 mt-0.5 flex-shrink-0">4</span>
-                  <span>一段読書に記録、インプットが蓄積</span>
+                  <span>「近くのバー」でリラックスしながら読書</span>
                 </div>
                 <div className="flex items-start">
                   <span className="w-5 h-5 bg-primary-600 text-white rounded-full flex items-center justify-center text-xs mr-2 mt-0.5 flex-shrink-0">5</span>
+                  <span>一段読書に記録、インプットが蓄積</span>
+                </div>
+                <div className="flex items-start">
+                  <span className="w-5 h-5 bg-primary-600 text-white rounded-full flex items-center justify-center text-xs mr-2 mt-0.5 flex-shrink-0">6</span>
                   <span>草稿が生成され、noteやXに発信</span>
+                </div>
+              </div>
+              
+              {/* 場所の特徴説明 */}
+              <div className="mt-4 pt-4 border-t border-primary-200">
+                <h3 className="text-sm font-medium text-primary-800 mb-2">各場所の特徴</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <div className="bg-white rounded-lg p-3 border border-primary-200">
+                    <div className="font-medium text-primary-700 mb-1">📚 本屋</div>
+                    <div className="text-primary-600">書籍購入、新刊発見、読書環境の確認</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-primary-200">
+                    <div className="font-medium text-primary-700 mb-1">☕ 喫茶店</div>
+                    <div className="text-primary-600">集中読書、静寂な環境、長時間滞在</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-primary-200">
+                    <div className="font-medium text-primary-700 mb-1">🍺 バー</div>
+                    <div className="text-primary-600">リラックス読書、夜間利用、社交的読書</div>
+                  </div>
                 </div>
               </div>
             </div>
