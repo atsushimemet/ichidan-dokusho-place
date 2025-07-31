@@ -162,9 +162,12 @@ function Admin() {
         <header className="w-full bg-white shadow-sm border-b border-primary-200 sticky top-0 z-10">
           <div className="max-w-md mx-auto px-6 py-4 sm:py-6">
             <div className="text-center">
-              <h1 className="text-xl sm:text-2xl font-bold text-primary-900 border-b-2 border-primary-200 pb-2">
+              <button
+                onClick={() => navigate('/')}
+                className="text-xl sm:text-2xl font-bold text-primary-900 border-b-2 border-primary-200 pb-2 hover:text-primary-600 transition-colors"
+              >
                 ichidan-dokusho-place
-              </h1>
+              </button>
               <p className="text-primary-600 mt-3 text-sm sm:text-base">
                 読書に集中できる場所を見つけよう
               </p>

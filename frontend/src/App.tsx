@@ -154,14 +154,6 @@ function App() {
               読書に集中できる場所を見つけよう
             </p>
             <p className="text-xs text-primary-500 mt-1">一段読書と連携</p>
-            <div className="mt-4">
-              <a
-                href="/admin"
-                className="inline-flex items-center px-3 py-2 border border-transparent text-xs font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-              >
-                管理画面
-              </a>
-            </div>
           </div>
         </div>
       </header>
@@ -477,9 +469,17 @@ function App() {
       {/* フッター */}
       <footer className="w-full bg-white border-t border-primary-200 mt-8">
         <div className="max-w-md mx-auto px-6 py-4">
-          <p className="text-center text-primary-600 text-xs">
-            © 2024 ichidan-dokusho-place. 読書の空間設計を支援するプロトタイプ機能です。
-          </p>
+          <div className="flex justify-between items-center">
+            <p className="text-primary-600 text-xs">
+              © 2024 ichidan-dokusho-place
+            </p>
+            <a
+              href="/admin"
+              className="text-xs text-primary-500 hover:text-primary-600 transition-colors"
+            >
+              管理画面
+            </a>
+          </div>
         </div>
       </footer>
     </div>
