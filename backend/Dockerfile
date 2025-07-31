@@ -1,33 +1,19 @@
-# ビルドステージ
-FROM node:18-alpine AS builder
+# 本番環境用Dockerfile
+FROM node:18-alpine
 
 WORKDIR /app
 
-# package.jsonとpackage-lock.jsonをコピー
+# package.jsonをコピー
 COPY package*.json ./
 
 # 依存関係をインストール
-RUN npm ci --only=production
+RUN npm install
 
 # ソースコードをコピー
 COPY . .
 
 # TypeScriptをコンパイル
 RUN npm run build
-
-# 本番ステージ
-FROM node:18-alpine AS production
-
-WORKDIR /app
-
-# package.jsonとpackage-lock.jsonをコピー
-COPY package*.json ./
-
-# 本番依存関係のみをインストール
-RUN npm ci --only=production && npm cache clean --force
-
-# ビルドされたファイルをコピー
-COPY --from=builder /app/dist ./dist
 
 # 非rootユーザーを作成
 RUN addgroup -g 1001 -S nodejs
