@@ -11,21 +11,30 @@ interface Place {
 }
 
 interface RegistrationForm {
-  type: 'cafes' | 'bookstores';
+  type: 'cafes' | 'bookstores' | 'bars';
   name: string;
   googleMapsUrl: string;
   station: string;
   walkingTime: string;
 }
 
+interface StationForm {
+  name: string;
+  location: string;
+}
+
+// API URLを環境変数から取得（開発時はlocalhost、本番時はRenderのURL）
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 function App() {
   const [selectedStation, setSelectedStation] = useState('')
-  const [activeTab, setActiveTab] = useState<'cafes' | 'bookstores'>('cafes')
+  const [activeTab, setActiveTab] = useState<'cafes' | 'bookstores' | 'bars'>('cafes')
   const [cafes, setCafes] = useState<Place[]>([])
   const [bookstores, setBookstores] = useState<Place[]>([])
+  const [bars, setBars] = useState<Place[]>([])
   const [stations, setStations] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [showRegistrationForm, setShowRegistrationForm] = useState(false)
+  const [showStationForm, setShowStationForm] = useState(false)
   const [registrationForm, setRegistrationForm] = useState<RegistrationForm>({
     type: 'cafes',
     name: '',
@@ -33,11 +42,15 @@ function App() {
     station: '',
     walkingTime: ''
   })
+  const [stationForm, setStationForm] = useState<StationForm>({
+    name: '',
+    location: ''
+  })
 
   useEffect(() => {
     const fetchStations = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/stations');
+        const response = await fetch(`${API_BASE_URL}/api/stations`);
         const data = await response.json();
         setStations(data);
       } catch (error) {
@@ -56,20 +69,24 @@ function App() {
       setLoading(true);
       const fetchData = async () => {
         try {
-          const [cafesResponse, bookstoresResponse] = await Promise.all([
-            fetch(`http://localhost:3000/api/cafes?station=${encodeURIComponent(selectedStation)}`),
-            fetch(`http://localhost:3000/api/bookstores?station=${encodeURIComponent(selectedStation)}`)
+          const [cafesResponse, bookstoresResponse, barsResponse] = await Promise.all([
+            fetch(`${API_BASE_URL}/api/cafes?station=${encodeURIComponent(selectedStation)}`),
+            fetch(`${API_BASE_URL}/api/bookstores?station=${encodeURIComponent(selectedStation)}`),
+            fetch(`${API_BASE_URL}/api/bars?station=${encodeURIComponent(selectedStation)}`)
           ]);
 
           const cafesData = await cafesResponse.json();
           const bookstoresData = await bookstoresResponse.json();
+          const barsData = await barsResponse.json();
 
           setCafes(cafesData);
           setBookstores(bookstoresData);
+          setBars(barsData);
         } catch (error) {
           console.error('Failed to fetch places:', error);
           setCafes([]);
           setBookstores([]);
+          setBars([]);
         } finally {
           setLoading(false);
         }
@@ -78,6 +95,7 @@ function App() {
     } else {
       setCafes([]);
       setBookstores([]);
+      setBars([]);
     }
   }, [selectedStation]);
 
@@ -85,8 +103,13 @@ function App() {
     e.preventDefault();
     
     try {
+<<<<<<< HEAD
+      const endpoint = registrationForm.type === 'cafes' ? '/api/cafes' : registrationForm.type === 'bookstores' ? '/api/bookstores' : '/api/bars';
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+=======
       const endpoint = registrationForm.type === 'cafes' ? '/api/cafes' : '/api/bookstores';
       const response = await fetch(`http://localhost:3000${endpoint}`, {
+>>>>>>> origin/main
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -100,7 +123,28 @@ function App() {
       });
 
       if (response.ok) {
+<<<<<<< HEAD
+        // 登録成功後、データを再取得
+        if (selectedStation) {
+          const [cafesResponse, bookstoresResponse, barsResponse] = await Promise.all([
+            fetch(`${API_BASE_URL}/api/cafes?station=${encodeURIComponent(selectedStation)}`),
+            fetch(`${API_BASE_URL}/api/bookstores?station=${encodeURIComponent(selectedStation)}`),
+            fetch(`${API_BASE_URL}/api/bars?station=${encodeURIComponent(selectedStation)}`)
+          ]);
+
+          const cafesData = await cafesResponse.json();
+          const bookstoresData = await bookstoresResponse.json();
+          const barsData = await barsResponse.json();
+
+          setCafes(cafesData);
+          setBookstores(bookstoresData);
+          setBars(barsData);
+        }
+
+        // フォームをリセット
+=======
         // 登録成功後、フォームをリセット
+>>>>>>> origin/main
         setRegistrationForm({
           type: 'cafes',
           name: '',
@@ -127,7 +171,46 @@ function App() {
     }
   };
 
+<<<<<<< HEAD
+  // 駅登録処理
+  const handleStationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/stations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(stationForm),
+      });
+
+      if (response.ok) {
+        // 駅登録成功後、駅一覧を再取得
+        const stationsResponse = await fetch(`${API_BASE_URL}/api/stations`);
+        const stationsData = await stationsResponse.json();
+        setStations(stationsData);
+
+        // フォームをリセット
+        setStationForm({
+          name: '',
+          location: ''
+        });
+        setShowStationForm(false);
+        alert('駅を登録しました！');
+      } else {
+        const error = await response.json();
+        alert(`駅の登録に失敗しました: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Failed to register station:', error);
+      alert('駅の登録に失敗しました');
+    }
+  };
+
+=======
   // 徒歩時間を表示用にフォーマットする関数
+>>>>>>> origin/main
   const formatWalkingTime = (walkingTime: string): string => {
     if (!walkingTime) return '';
     // 数字のみの場合は「分」を付ける
@@ -167,7 +250,7 @@ function App() {
               インプットの質と習慣性を高めるため、「どこで読むか」「どこで本を買うか」まで含めて、
               読書の空間設計を支援します。
             </p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="bg-primary-50 p-3 rounded-lg">
                 <h3 className="font-medium text-primary-900 mb-1 text-sm">📚 本屋</h3>
                 <p className="text-xs text-primary-700">
@@ -178,6 +261,12 @@ function App() {
                 <h3 className="font-medium text-primary-900 mb-1 text-sm">☕ 喫茶店</h3>
                 <p className="text-xs text-primary-700">
                   読書に集中できる静かな空間
+                </p>
+              </div>
+              <div className="bg-primary-50 p-3 rounded-lg">
+                <h3 className="font-medium text-primary-900 mb-1 text-sm">🍺 バー</h3>
+                <p className="text-xs text-primary-700">
+                  リラックスしながら読書できる空間
                 </p>
               </div>
             </div>
@@ -229,6 +318,16 @@ function App() {
                   }`}
                 >
                   📚 本屋
+                </button>
+                <button
+                  onClick={() => setActiveTab('bars')}
+                  className={`flex-1 px-4 py-3 font-medium transition-colors duration-200 text-sm ${
+                    activeTab === 'bars'
+                      ? 'text-primary-700 border-b-2 border-primary-600'
+                      : 'text-primary-500 hover:text-primary-700'
+                  }`}
+                >
+                  🍺 バー
                 </button>
               </div>
 
@@ -318,27 +417,129 @@ function App() {
                       )}
                     </div>
                   )}
+
+                  {/* バー一覧 */}
+                  {activeTab === 'bars' && (
+                    <div>
+                      <h3 className="text-base sm:text-lg font-semibold text-primary-900 mb-3 border-b border-primary-200 pb-2">
+                        {selectedStation}周辺のバー
+                      </h3>
+                      {bars.length > 0 ? (
+                        <div className="space-y-3">
+                          {bars.map((bar) => (
+                            <div key={bar.id} className="border border-primary-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                              <div className="flex justify-between items-start mb-3">
+                                <h4 className="font-medium text-primary-900 text-sm sm:text-base">{bar.name}</h4>
+                                <div className="text-right">
+                                  <span className="text-xs text-primary-500 block">{bar.station}</span>
+                                  {bar.walkingTime && (
+                                    <span className="text-xs text-primary-600 bg-primary-100 px-2 py-1 rounded">
+                                      🚶‍♂️ {formatWalkingTime(bar.walkingTime)}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <a
+                                href={bar.googleMapsUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary-600 hover:text-primary-700 text-sm font-medium inline-flex items-center"
+                              >
+                                📍 Google Mapsで見る →
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-primary-500">
+                          <p className="text-sm">この駅周辺のバーはまだ登録されていません。</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
             </div>
           </section>
         )}
 
-        {/* 場所登録フォーム */}
+        {/* 登録セクション */}
         <section className="mb-6">
           <div className="card">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-base sm:text-lg font-semibold text-primary-900 border-b border-primary-200 pb-2">
-                📝 新しい場所を登録
-              </h2>
+            <h2 className="text-base sm:text-lg font-semibold text-primary-900 border-b border-primary-200 pb-2 mb-4">
+              📝 新しい場所を登録
+            </h2>
+            
+            {/* ボタンセクション */}
+            <div className="flex flex-col sm:flex-row gap-2 mb-4">
+              <button
+                onClick={() => setShowStationForm(!showStationForm)}
+                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  showStationForm
+                    ? 'bg-primary-100 text-primary-700 border border-primary-300'
+                    : 'bg-primary-600 text-white hover:bg-primary-700'
+                }`}
+              >
+                🚉 駅
+              </button>
               <button
                 onClick={() => setShowRegistrationForm(!showRegistrationForm)}
-                className="btn-primary text-sm px-3 py-2"
+                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  showRegistrationForm
+                    ? 'bg-primary-100 text-primary-700 border border-primary-300'
+                    : 'bg-primary-600 text-white hover:bg-primary-700'
+                }`}
               >
-                {showRegistrationForm ? '閉じる' : '登録する'}
+                📍 場所
               </button>
             </div>
+<<<<<<< HEAD
+
+            {/* 駅登録フォーム */}
+            {showStationForm && (
+              <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                <form onSubmit={handleStationSubmit} className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-blue-700 mb-1">
+                        駅名
+                      </label>
+                      <input
+                        type="text"
+                        value={stationForm.name}
+                        onChange={(e) => setStationForm({...stationForm, name: e.target.value})}
+                        className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        placeholder="例: 新宿駅"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-blue-700 mb-1">
+                        地域
+                      </label>
+                      <input
+                        type="text"
+                        value={stationForm.location}
+                        onChange={(e) => setStationForm({...stationForm, location: e.target.value})}
+                        className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        placeholder="例: 新宿区"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    登録
+                  </button>
+                </form>
+              </div>
+            )}
+
+=======
             
+>>>>>>> origin/main
             {showRegistrationForm && (
               <form onSubmit={handleRegistrationSubmit} className="space-y-4">
                 <div>
@@ -347,11 +548,12 @@ function App() {
                   </label>
                   <select
                     value={registrationForm.type}
-                    onChange={(e) => setRegistrationForm({...registrationForm, type: e.target.value as 'cafes' | 'bookstores'})}
+                    onChange={(e) => setRegistrationForm({...registrationForm, type: e.target.value as 'cafes' | 'bookstores' | 'bars'})}
                     className="w-full px-3 py-2 border border-primary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
                   >
                     <option value="cafes">☕ 喫茶店</option>
                     <option value="bookstores">📚 本屋</option>
+                    <option value="bars">🍺 バー</option>
                   </select>
                 </div>
                 
@@ -422,19 +624,19 @@ function App() {
                   type="submit"
                   className="w-full btn-primary py-3"
                 >
-                  登録する
+                  登録
                 </button>
               </form>
             )}
           </div>
         </section>
 
-        {/* 読書ルート提案 */}
+        {/* 読書の空間設計を支援 */}
         {selectedStation && (
           <section className="mb-6">
             <div className="card bg-gradient-to-r from-primary-50 to-primary-100">
               <h2 className="text-base sm:text-lg font-semibold text-primary-900 mb-3 border-b border-primary-200 pb-2">
-                🚶‍♂️ 読書ルート提案
+                📚 読書の空間設計を支援
               </h2>
               <div className="space-y-2 text-xs sm:text-sm text-primary-700">
                 <div className="flex items-start">
@@ -451,11 +653,34 @@ function App() {
                 </div>
                 <div className="flex items-start">
                   <span className="w-5 h-5 bg-primary-600 text-white rounded-full flex items-center justify-center text-xs mr-2 mt-0.5 flex-shrink-0">4</span>
-                  <span>一段読書に記録、インプットが蓄積</span>
+                  <span>「近くのバー」でリラックスしながら読書</span>
                 </div>
                 <div className="flex items-start">
                   <span className="w-5 h-5 bg-primary-600 text-white rounded-full flex items-center justify-center text-xs mr-2 mt-0.5 flex-shrink-0">5</span>
+                  <span>一段読書に記録、インプットが蓄積</span>
+                </div>
+                <div className="flex items-start">
+                  <span className="w-5 h-5 bg-primary-600 text-white rounded-full flex items-center justify-center text-xs mr-2 mt-0.5 flex-shrink-0">6</span>
                   <span>草稿が生成され、noteやXに発信</span>
+                </div>
+              </div>
+              
+              {/* 場所の特徴説明 */}
+              <div className="mt-4 pt-4 border-t border-primary-200">
+                <h3 className="text-sm font-medium text-primary-800 mb-2">各場所の特徴</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <div className="bg-white rounded-lg p-3 border border-primary-200">
+                    <div className="font-medium text-primary-700 mb-1">📚 本屋</div>
+                    <div className="text-primary-600">書籍購入、新刊発見、読書環境の確認</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-primary-200">
+                    <div className="font-medium text-primary-700 mb-1">☕ 喫茶店</div>
+                    <div className="text-primary-600">集中読書、静寂な環境、長時間滞在</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-primary-200">
+                    <div className="font-medium text-primary-700 mb-1">🍺 バー</div>
+                    <div className="text-primary-600">リラックス読書、夜間利用、社交的読書</div>
+                  </div>
                 </div>
               </div>
             </div>

@@ -1,14 +1,34 @@
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
+import { Pool } from 'pg';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// CORS設定を本番環境に適した設定に変更
+const corsOptions = {
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://ichidan-dokusho-place-frontend.onrender.com',
+    'https://ichidan-dokusho-place.onrender.com'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
+
+// PostgreSQL接続プール
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
 
 interface Place {
   id: number;
@@ -19,287 +39,385 @@ interface Place {
   walkingTime?: string;
 }
 
-let cafes: Place[] = [
-  {
-    id: 1,
-    name: '喫茶 木漏れ日',
-    location: '渋谷区',
-    station: '渋谷駅',
-    googleMapsUrl: 'https://maps.google.com/?q=喫茶+木漏れ日+渋谷',
-    walkingTime: '3'
-  },
-  {
-    id: 2,
-    name: 'カフェ ブックエンド',
-    location: '新宿区',
-    station: '新宿駅',
-    googleMapsUrl: 'https://maps.google.com/?q=カフェ+ブックエンド+新宿',
-    walkingTime: '5'
-  },
-  {
-    id: 3,
-    name: '読書カフェ 静寂',
-    location: '池袋区',
-    station: '池袋駅',
-    googleMapsUrl: 'https://maps.google.com/?q=読書カフェ+静寂+池袋',
-    walkingTime: '7'
-  },
-  {
-    id: 4,
-    name: 'コーヒーショップ ページ',
-    location: '千代田区',
-    station: '東京駅',
-    googleMapsUrl: 'https://maps.google.com/?q=コーヒーショップ+ページ+東京',
-    walkingTime: '4'
-  },
-  {
-    id: 5,
-    name: '喫茶室 思索',
-    location: '港区',
-    station: '品川駅',
-    googleMapsUrl: 'https://maps.google.com/?q=喫茶室+思索+品川',
-    walkingTime: '6'
-  },
-  {
-    id: 6,
-    name: 'カフェ リテラチャー',
-    location: '台東区',
-    station: '上野駅',
-    googleMapsUrl: 'https://maps.google.com/?q=カフェ+リテラチャー+上野',
-    walkingTime: '8'
-  },
-  {
-    id: 7,
-    name: '読書スペース デジタル',
-    location: '千代田区',
-    station: '秋葉原駅',
-    googleMapsUrl: 'https://maps.google.com/?q=読書スペース+デジタル+秋葉原',
-    walkingTime: '2'
-  },
-  {
-    id: 8,
-    name: 'カフェ アートブック',
-    location: '渋谷区',
-    station: '原宿駅',
-    googleMapsUrl: 'https://maps.google.com/?q=カフェ+アートブック+原宿',
-    walkingTime: '4'
-  },
-  {
-    id: 9,
-    name: '喫茶店 文庫',
-    location: '目黒区',
-    station: '代官山駅',
-    googleMapsUrl: 'https://maps.google.com/?q=喫茶店+文庫+代官山',
-    walkingTime: '5'
-  },
-  {
-    id: 10,
-    name: 'カフェ エッセイ',
-    location: '渋谷区',
-    station: '恵比寿駅',
-    googleMapsUrl: 'https://maps.google.com/?q=カフェ+エッセイ+恵比寿',
-    walkingTime: '3'
-  }
-];
+interface Station {
+  id: number;
+  name: string;
+  location: string;
+}
 
-let bookstores: Place[] = [
-  {
-    id: 1,
-    name: '三省堂書店 渋谷店',
-    location: '渋谷区',
-    station: '渋谷駅',
-    googleMapsUrl: 'https://maps.google.com/?q=三省堂書店+渋谷店',
-    walkingTime: '2'
-  },
-  {
-    id: 2,
-    name: '紀伊國屋書店 新宿本店',
-    location: '新宿区',
-    station: '新宿駅',
-    googleMapsUrl: 'https://maps.google.com/?q=紀伊國屋書店+新宿本店',
-    walkingTime: '1'
-  },
-  {
-    id: 3,
-    name: 'ジュンク堂書店 池袋本店',
-    location: '池袋区',
-    station: '池袋駅',
-    googleMapsUrl: 'https://maps.google.com/?q=ジュンク堂書店+池袋本店',
-    walkingTime: '3'
-  },
-  {
-    id: 4,
-    name: '丸善 東京駅店',
-    location: '千代田区',
-    station: '東京駅',
-    googleMapsUrl: 'https://maps.google.com/?q=丸善+東京駅店',
-    walkingTime: '5'
-  },
-  {
-    id: 5,
-    name: '有隣堂 品川店',
-    location: '港区',
-    station: '品川駅',
-    googleMapsUrl: 'https://maps.google.com/?q=有隣堂+品川店',
-    walkingTime: '4'
-  },
-  {
-    id: 6,
-    name: '書泉 上野店',
-    location: '台東区',
-    station: '上野駅',
-    googleMapsUrl: 'https://maps.google.com/?q=書泉+上野店',
-    walkingTime: '6'
-  },
-  {
-    id: 7,
-    name: '書泉 秋葉原店',
-    location: '千代田区',
-    station: '秋葉原駅',
-    googleMapsUrl: 'https://maps.google.com/?q=書泉+秋葉原店',
-    walkingTime: '2'
-  },
-  {
-    id: 8,
-    name: 'ブックファースト 原宿店',
-    location: '渋谷区',
-    station: '原宿駅',
-    googleMapsUrl: 'https://maps.google.com/?q=ブックファースト+原宿店',
-    walkingTime: '3'
-  },
-  {
-    id: 9,
-    name: '蔦屋書店 代官山店',
-    location: '目黒区',
-    station: '代官山駅',
-    googleMapsUrl: 'https://maps.google.com/?q=蔦屋書店+代官山店',
-    walkingTime: '7'
-  },
-  {
-    id: 10,
-    name: '有隣堂 恵比寿店',
-    location: '渋谷区',
-    station: '恵比寿駅',
-    googleMapsUrl: 'https://maps.google.com/?q=有隣堂+恵比寿店',
-    walkingTime: '4'
-  }
-];
+// データベース初期化
+async function initializeDatabase() {
+  try {
+    // テーブル作成
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS cafes (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        location VARCHAR(255) NOT NULL,
+        station VARCHAR(255) NOT NULL,
+        google_maps_url TEXT NOT NULL,
+        walking_time VARCHAR(10),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
 
-// ヘルスチェック
-app.get('/', (req, res) => {
-  res.json({ 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS bookstores (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        location VARCHAR(255) NOT NULL,
+        station VARCHAR(255) NOT NULL,
+        google_maps_url TEXT NOT NULL,
+        walking_time VARCHAR(10),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS stations (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL UNIQUE,
+        location VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS bars (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        location VARCHAR(255) NOT NULL,
+        station VARCHAR(255) NOT NULL,
+        google_maps_url TEXT NOT NULL,
+        walking_time VARCHAR(10),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // サンプルデータの挿入（テーブルが空の場合のみ）
+    const cafesCount = await pool.query('SELECT COUNT(*) FROM cafes');
+    if (parseInt(cafesCount.rows[0].count) === 0) {
+      await pool.query(`
+        INSERT INTO cafes (name, location, station, google_maps_url, walking_time) VALUES
+        ('喫茶 木漏れ日', '渋谷区', '渋谷駅', 'https://maps.google.com/?q=喫茶+木漏れ日+渋谷', '3'),
+        ('珈琲 森の時計', '新宿区', '新宿駅', 'https://maps.google.com/?q=珈琲+森の時計+新宿', '5'),
+        ('喫茶 古書', '池袋区', '池袋駅', 'https://maps.google.com/?q=喫茶+古書+池袋', '2'),
+        ('カフェ 読書空間', '千代田区', '東京駅', 'https://maps.google.com/?q=カフェ+読書空間+東京', '4'),
+        ('喫茶 静寂', '港区', '品川駅', 'https://maps.google.com/?q=喫茶+静寂+品川', '6')
+      `);
+    }
+
+    const bookstoresCount = await pool.query('SELECT COUNT(*) FROM bookstores');
+    if (parseInt(bookstoresCount.rows[0].count) === 0) {
+      await pool.query(`
+        INSERT INTO bookstores (name, location, station, google_maps_url, walking_time) VALUES
+        ('三省堂書店 渋谷店', '渋谷区', '渋谷駅', 'https://maps.google.com/?q=三省堂書店+渋谷店', '2'),
+        ('紀伊國屋書店 新宿本店', '新宿区', '新宿駅', 'https://maps.google.com/?q=紀伊國屋書店+新宿本店', '3'),
+        ('ジュンク堂書店 池袋本店', '池袋区', '池袋駅', 'https://maps.google.com/?q=ジュンク堂書店+池袋本店', '1'),
+        ('丸善 丸の内本店', '千代田区', '東京駅', 'https://maps.google.com/?q=丸善+丸の内本店', '5'),
+        ('有隣堂 品川店', '港区', '品川駅', 'https://maps.google.com/?q=有隣堂+品川店', '4')
+      `);
+    }
+
+    const stationsCount = await pool.query('SELECT COUNT(*) FROM stations');
+    if (parseInt(stationsCount.rows[0].count) === 0) {
+      await pool.query(`
+        INSERT INTO stations (name, location) VALUES
+        ('渋谷駅', '渋谷区'),
+        ('新宿駅', '新宿区'),
+        ('池袋駅', '池袋区'),
+        ('東京駅', '千代田区'),
+        ('品川駅', '港区'),
+        ('上野駅', '台東区'),
+        ('秋葉原駅', '千代田区'),
+        ('原宿駅', '渋谷区'),
+        ('代官山駅', '渋谷区'),
+        ('恵比寿駅', '渋谷区')
+      `);
+    }
+
+    const barsCount = await pool.query('SELECT COUNT(*) FROM bars');
+    if (parseInt(barsCount.rows[0].count) === 0) {
+      await pool.query(`
+        INSERT INTO bars (name, location, station, google_maps_url, walking_time) VALUES
+        ('バー 読書空間', '渋谷区', '渋谷駅', 'https://maps.google.com/?q=バー+読書空間+渋谷', '3'),
+        ('BAR 静寂', '新宿区', '新宿駅', 'https://maps.google.com/?q=BAR+静寂+新宿', '4'),
+        ('酒場 古書', '池袋区', '池袋駅', 'https://maps.google.com/?q=酒場+古書+池袋', '2'),
+        ('PUB 読書', '千代田区', '東京駅', 'https://maps.google.com/?q=PUB+読書+東京', '5'),
+        ('バー 木漏れ日', '港区', '品川駅', 'https://maps.google.com/?q=バー+木漏れ日+品川', '3')
+      `);
+    }
+
+    console.log('Database initialized successfully');
+  } catch (error) {
+    console.error('Database initialization error:', error);
+  }
+}
+
+// データベース初期化を実行
+initializeDatabase();
+
+app.get('/', (req: express.Request, res: express.Response) => {
+  res.json({
     message: 'ichidan-dokusho-place API',
     version: '1.0.0',
     endpoints: {
-      health: '/health',
+      stations: '/api/stations',
       cafes: '/api/cafes',
       bookstores: '/api/bookstores',
-      stations: '/api/stations'
+      health: '/health'
     }
   });
 });
 
+app.get('/health', async (req: express.Request, res: express.Response) => {
+  try {
+    const cafesResult = await pool.query('SELECT COUNT(*) FROM cafes');
+    const bookstoresResult = await pool.query('SELECT COUNT(*) FROM bookstores');
+    
+    res.json({
+      status: 'healthy',
+      database: 'connected',
+      cafes: parseInt(cafesResult.rows[0].count),
+      bookstores: parseInt(bookstoresResult.rows[0].count)
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      status: 'unhealthy',
+      database: 'disconnected',
+      error: error.message
+    });
+  }
+});
+
+// 駅一覧取得（フロントエンド用）
+app.get('/api/stations', async (req: express.Request, res: express.Response) => {
+  try {
+    const result = await pool.query('SELECT name FROM stations ORDER BY name');
+    const stations = result.rows.map((row: any) => row.name);
+    res.json(stations);
+  } catch (error) {
+    console.error('Error fetching stations:', error);
+    // フォールバック: ハードコードされた駅リスト
+    const stations = [
+      '渋谷駅', '新宿駅', '池袋駅', '東京駅', '品川駅',
+      '上野駅', '秋葉原駅', '原宿駅', '代官山駅', '恵比寿駅'
+    ];
+    res.json(stations);
+  }
+});
+
 // 喫茶店一覧取得
-app.get('/api/cafes', (req, res) => {
-  const { station } = req.query;
-  
-  if (station) {
-    const filteredCafes = cafes.filter(cafe => cafe.station === station);
-    res.json(filteredCafes);
-  } else {
+app.get('/api/cafes', async (req: express.Request, res: express.Response) => {
+  try {
+    const { station } = req.query;
+    let query = 'SELECT * FROM cafes';
+    let params: string[] = [];
+
+    if (station) {
+      query += ' WHERE station = $1';
+      params.push(station as string);
+    }
+
+    query += ' ORDER BY created_at DESC';
+    const result = await pool.query(query, params);
+    
+    const cafes: Place[] = result.rows.map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      location: row.location,
+      station: row.station,
+      googleMapsUrl: row.google_maps_url,
+      walkingTime: row.walking_time
+    }));
+
     res.json(cafes);
+  } catch (error) {
+    console.error('Error fetching cafes:', error);
+    res.status(500).json({ error: 'Failed to fetch cafes' });
   }
 });
 
 // 喫茶店登録
-app.post('/api/cafes', (req, res) => {
-  const { name, googleMapsUrl, station, walkingTime } = req.body;
-  
-  if (!name || !googleMapsUrl || !station) {
-    return res.status(400).json({ error: '店舗名、Google Maps URL、最寄駅は必須です' });
-  }
-  
-  // 徒歩時間のバリデーション
-  if (walkingTime) {
-    const walkingTimeNum = parseInt(walkingTime);
-    if (isNaN(walkingTimeNum) || walkingTimeNum < 1 || walkingTimeNum > 60) {
-      return res.status(400).json({ error: '徒歩時間は1〜60分の整数で入力してください' });
+app.post('/api/cafes', async (req: express.Request, res: express.Response) => {
+  try {
+    const { name, googleMapsUrl, station, walkingTime } = req.body;
+    
+    if (!name || !googleMapsUrl || !station) {
+      return res.status(400).json({ error: '店舗名、Google Maps URL、最寄駅は必須です' });
     }
+    
+    // 徒歩時間のバリデーション
+    if (walkingTime) {
+      const walkingTimeNum = parseInt(walkingTime);
+      if (isNaN(walkingTimeNum) || walkingTimeNum < 1 || walkingTimeNum > 60) {
+        return res.status(400).json({ error: '徒歩時間は1〜60分の整数で入力してください' });
+      }
+    }
+    
+    const location = getLocationFromStation(station);
+    
+    const result = await pool.query(
+      'INSERT INTO cafes (name, location, station, google_maps_url, walking_time) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [name, location, station, googleMapsUrl, walkingTime || null]
+    );
+    
+    const newCafe: Place = {
+      id: result.rows[0].id,
+      name: result.rows[0].name,
+      location: result.rows[0].location,
+      station: result.rows[0].station,
+      googleMapsUrl: result.rows[0].google_maps_url,
+      walkingTime: result.rows[0].walking_time
+    };
+    
+    res.status(201).json(newCafe);
+  } catch (error) {
+    console.error('Error creating cafe:', error);
+    res.status(500).json({ error: 'Failed to create cafe' });
   }
-  
-  const newCafe: Place = {
-    id: cafes.length + 1,
-    name,
-    location: getLocationFromStation(station),
-    station,
-    googleMapsUrl,
-    walkingTime: walkingTime || undefined
-  };
-  
-  cafes.push(newCafe);
-  res.status(201).json(newCafe);
 });
 
 // 本屋一覧取得
-app.get('/api/bookstores', (req, res) => {
-  const { station } = req.query;
-  
-  if (station) {
-    const filteredBookstores = bookstores.filter(bookstore => bookstore.station === station);
-    res.json(filteredBookstores);
-  } else {
+app.get('/api/bookstores', async (req: express.Request, res: express.Response) => {
+  try {
+    const { station } = req.query;
+    let query = 'SELECT * FROM bookstores';
+    let params: string[] = [];
+
+    if (station) {
+      query += ' WHERE station = $1';
+      params.push(station as string);
+    }
+
+    query += ' ORDER BY created_at DESC';
+    const result = await pool.query(query, params);
+    
+    const bookstores: Place[] = result.rows.map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      location: row.location,
+      station: row.station,
+      googleMapsUrl: row.google_maps_url,
+      walkingTime: row.walking_time
+    }));
+
     res.json(bookstores);
+  } catch (error) {
+    console.error('Error fetching bookstores:', error);
+    res.status(500).json({ error: 'Failed to fetch bookstores' });
   }
 });
 
 // 本屋登録
-app.post('/api/bookstores', (req, res) => {
-  const { name, googleMapsUrl, station, walkingTime } = req.body;
-  
-  if (!name || !googleMapsUrl || !station) {
-    return res.status(400).json({ error: '店舗名、Google Maps URL、最寄駅は必須です' });
-  }
-  
-  // 徒歩時間のバリデーション
-  if (walkingTime) {
-    const walkingTimeNum = parseInt(walkingTime);
-    if (isNaN(walkingTimeNum) || walkingTimeNum < 1 || walkingTimeNum > 60) {
-      return res.status(400).json({ error: '徒歩時間は1〜60分の整数で入力してください' });
+app.post('/api/bookstores', async (req: express.Request, res: express.Response) => {
+  try {
+    const { name, googleMapsUrl, station, walkingTime } = req.body;
+    
+    if (!name || !googleMapsUrl || !station) {
+      return res.status(400).json({ error: '店舗名、Google Maps URL、最寄駅は必須です' });
     }
+    
+    // 徒歩時間のバリデーション
+    if (walkingTime) {
+      const walkingTimeNum = parseInt(walkingTime);
+      if (isNaN(walkingTimeNum) || walkingTimeNum < 1 || walkingTimeNum > 60) {
+        return res.status(400).json({ error: '徒歩時間は1〜60分の整数で入力してください' });
+      }
+    }
+    
+    const location = getLocationFromStation(station);
+    
+    const result = await pool.query(
+      'INSERT INTO bookstores (name, location, station, google_maps_url, walking_time) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [name, location, station, googleMapsUrl, walkingTime || null]
+    );
+    
+    const newBookstore: Place = {
+      id: result.rows[0].id,
+      name: result.rows[0].name,
+      location: result.rows[0].location,
+      station: result.rows[0].station,
+      googleMapsUrl: result.rows[0].google_maps_url,
+      walkingTime: result.rows[0].walking_time
+    };
+    
+    res.status(201).json(newBookstore);
+  } catch (error) {
+    console.error('Error creating bookstore:', error);
+    res.status(500).json({ error: 'Failed to create bookstore' });
   }
-  
-  const newBookstore: Place = {
-    id: bookstores.length + 1,
-    name,
-    location: getLocationFromStation(station),
-    station,
-    googleMapsUrl,
-    walkingTime: walkingTime || undefined
-  };
-  
-  bookstores.push(newBookstore);
-  res.status(201).json(newBookstore);
 });
 
-// 駅一覧取得
-app.get('/api/stations', (req, res) => {
-  const stations = [
-    '渋谷駅', '新宿駅', '池袋駅', '東京駅', '品川駅',
-    '上野駅', '秋葉原駅', '原宿駅', '代官山駅', '恵比寿駅'
-  ];
-  res.json(stations);
+// バー一覧取得
+app.get('/api/bars', async (req: express.Request, res: express.Response) => {
+  try {
+    const { station } = req.query;
+    let query = 'SELECT * FROM bars';
+    let params: string[] = [];
+
+    if (station) {
+      query += ' WHERE station = $1';
+      params.push(station as string);
+    }
+
+    query += ' ORDER BY created_at DESC';
+    const result = await pool.query(query, params);
+    
+    const bars: Place[] = result.rows.map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      location: row.location,
+      station: row.station,
+      googleMapsUrl: row.google_maps_url,
+      walkingTime: row.walking_time
+    }));
+
+    res.json(bars);
+  } catch (error) {
+    console.error('Error fetching bars:', error);
+    res.status(500).json({ error: 'Failed to fetch bars' });
+  }
 });
 
-// ヘルスチェック
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    services: {
-      cafes: cafes.length,
-      bookstores: bookstores.length
+// バー登録
+app.post('/api/bars', async (req: express.Request, res: express.Response) => {
+  try {
+    const { name, googleMapsUrl, station, walkingTime } = req.body;
+    
+    if (!name || !googleMapsUrl || !station) {
+      return res.status(400).json({ error: '店舗名、Google Maps URL、最寄駅は必須です' });
     }
-  });
+    
+    // 徒歩時間のバリデーション
+    if (walkingTime) {
+      const walkingTimeNum = parseInt(walkingTime);
+      if (isNaN(walkingTimeNum) || walkingTimeNum < 1 || walkingTimeNum > 60) {
+        return res.status(400).json({ error: '徒歩時間は1〜60分の整数で入力してください' });
+      }
+    }
+    
+    const location = getLocationFromStation(station);
+    
+    const result = await pool.query(
+      'INSERT INTO bars (name, location, station, google_maps_url, walking_time) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [name, location, station, googleMapsUrl, walkingTime || null]
+    );
+    
+    const newBar: Place = {
+      id: result.rows[0].id,
+      name: result.rows[0].name,
+      location: result.rows[0].location,
+      station: result.rows[0].station,
+      googleMapsUrl: result.rows[0].google_maps_url,
+      walkingTime: result.rows[0].walking_time
+    };
+    
+    res.status(201).json(newBar);
+  } catch (error) {
+    console.error('Error creating bar:', error);
+    res.status(500).json({ error: 'Failed to create bar' });
+  }
 });
 
 // 駅から区を取得するヘルパー関数

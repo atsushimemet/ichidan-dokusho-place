@@ -1,0 +1,31 @@
+# Render BluePrint設定（有料プラン用）
+# 無料プランでは個別にサービスを作成してください
+# 詳細は DEPLOYMENT.md を参照
+
+services:
+  # フロントエンドサービス
+  - type: web
+    name: ichidan-dokusho-place-frontend
+    env: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        value: https://ichidan-dokusho-place-backend.onrender.com
+
+  # バックエンドサービス（Docker環境）
+  - type: web
+    name: ichidan-dokusho-place-backend
+    env: docker
+    dockerfilePath: ./backend/Dockerfile.dev
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false # Neonの接続文字列を手動で設定

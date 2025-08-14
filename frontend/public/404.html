@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ichidan-dokusho-place - 読書の空間設計を支援</title>
+    <meta name="description" content="読書に集中できる場所を見つけよう。一段読書と連携した読書の空間設計を支援します。" />
+</head>
+<body>
+    <div id="root">
+        <div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Arial, sans-serif;">
+            <div style="text-align: center;">
+                <h1>ichidan-dokusho-place</h1>
+                <p>ページを読み込み中...</p>
+            </div>
+        </div>
+    </div>
+    <script>
+        // SPAルーティング対応
+        sessionStorage.redirect = location.href;
+        location.replace('/');
+    </script>
+</body>
+</html> 
