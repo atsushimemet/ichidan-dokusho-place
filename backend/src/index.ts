@@ -207,144 +207,7 @@ app.get('/api/stations', async (req: express.Request, res: express.Response) => 
   }
 });
 
-// 駅一覧取得（管理用）
-app.get('/api/stations/all', async (req: express.Request, res: express.Response) => {
-  try {
-    const result = await pool.query('SELECT * FROM stations ORDER BY name');
-    
-    const stations: Station[] = result.rows.map((row: any) => ({
-      id: row.id,
-      name: row.name,
-      location: row.location
-    }));
-
-    res.json(stations);
-  } catch (error) {
-    console.error('Error fetching all stations:', error);
-    res.status(500).json({ error: 'Failed to fetch stations' });
-  }
-});
-
-// 駅登録
-app.post('/api/stations', async (req: express.Request, res: express.Response) => {
-  try {
-    const { name, location } = req.body;
-    
-    if (!name || !location) {
-      return res.status(400).json({ error: '駅名と地域は必須です' });
-    }
-    
-    const result = await pool.query(
-      'INSERT INTO stations (name, location) VALUES ($1, $2) RETURNING *',
-      [name, location]
-    );
-    
-    const newStation: Station = {
-      id: result.rows[0].id,
-      name: result.rows[0].name,
-      location: result.rows[0].location
-    };
-    
-    res.status(201).json(newStation);
-  } catch (error: any) {
-    if (error.code === '23505') { // UNIQUE制約違反
-      return res.status(400).json({ error: 'この駅名は既に登録されています' });
-    }
-    console.error('Error creating station:', error);
-    res.status(500).json({ error: 'Failed to create station' });
-  }
-});
-
-// 駅編集
-app.put('/api/stations/:id', async (req: express.Request, res: express.Response) => {
-  try {
-    const { id } = req.params;
-    const { name, location } = req.body;
-    
-    if (!name || !location) {
-      return res.status(400).json({ error: '駅名と地域は必須です' });
-    }
-    
-    const result = await pool.query(
-      'UPDATE stations SET name = $1, location = $2 WHERE id = $3 RETURNING *',
-      [name, location, id]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: '駅が見つかりません' });
-    }
-    
-    const updatedStation: Station = {
-      id: result.rows[0].id,
-      name: result.rows[0].name,
-      location: result.rows[0].location
-    };
-    
-    res.json(updatedStation);
-  } catch (error: any) {
-    if (error.code === '23505') { // UNIQUE制約違反
-      return res.status(400).json({ error: 'この駅名は既に登録されています' });
-    }
-    console.error('Error updating station:', error);
-    res.status(500).json({ error: 'Failed to update station' });
-  }
-});
-
-// 駅削除
-app.delete('/api/stations/:id', async (req: express.Request, res: express.Response) => {
-  try {
-    const { id } = req.params;
-    
-    // 駅を使用している喫茶店・本屋があるかチェック
-    const cafesResult = await pool.query('SELECT COUNT(*) FROM cafes WHERE station = (SELECT name FROM stations WHERE id = $1)', [id]);
-    const bookstoresResult = await pool.query('SELECT COUNT(*) FROM bookstores WHERE station = (SELECT name FROM stations WHERE id = $1)', [id]);
-    
-    const cafesCount = parseInt(cafesResult.rows[0].count);
-    const bookstoresCount = parseInt(bookstoresResult.rows[0].count);
-    
-    if (cafesCount > 0 || bookstoresCount > 0) {
-      return res.status(400).json({ 
-        error: 'この駅は使用中のため削除できません',
-        details: {
-          cafes: cafesCount,
-          bookstores: bookstoresCount
-        }
-      });
-    }
-    
-    const result = await pool.query('DELETE FROM stations WHERE id = $1 RETURNING *', [id]);
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: '駅が見つかりません' });
-    }
-    
-    res.json({ message: '駅を削除しました', id: parseInt(id) });
-  } catch (error) {
-    console.error('Error deleting station:', error);
-    res.status(500).json({ error: 'Failed to delete station' });
-  }
-});
-
-// 喫茶店の全件取得（管理用）
-app.get('/api/cafes/all', async (req: express.Request, res: express.Response) => {
-  try {
-    const result = await pool.query('SELECT * FROM cafes ORDER BY created_at DESC');
-    
-    const cafes: Place[] = result.rows.map((row: any) => ({
-      id: row.id,
-      name: row.name,
-      location: row.location,
-      station: row.station,
-      googleMapsUrl: row.google_maps_url,
-      walkingTime: row.walking_time
-    }));
-
-    res.json(cafes);
-  } catch (error) {
-    console.error('Error fetching all cafes:', error);
-    res.status(500).json({ error: 'Failed to fetch cafes' });
-  }
-});
+// 喫茶店一覧取得
 app.get('/api/cafes', async (req: express.Request, res: express.Response) => {
   try {
     const { station } = req.query;
@@ -375,6 +238,7 @@ app.get('/api/cafes', async (req: express.Request, res: express.Response) => {
   }
 });
 
+// 喫茶店登録
 app.post('/api/cafes', async (req: express.Request, res: express.Response) => {
   try {
     const { name, googleMapsUrl, station, walkingTime } = req.body;
@@ -414,89 +278,7 @@ app.post('/api/cafes', async (req: express.Request, res: express.Response) => {
   }
 });
 
-// 喫茶店の編集
-app.put('/api/cafes/:id', async (req: express.Request, res: express.Response) => {
-  try {
-    const { id } = req.params;
-    const { name, googleMapsUrl, station, walkingTime } = req.body;
-    
-    if (!name || !googleMapsUrl || !station) {
-      return res.status(400).json({ error: '店舗名、Google Maps URL、最寄駅は必須です' });
-    }
-    
-    // 徒歩時間のバリデーション
-    if (walkingTime) {
-      const walkingTimeNum = parseInt(walkingTime);
-      if (isNaN(walkingTimeNum) || walkingTimeNum < 1 || walkingTimeNum > 60) {
-        return res.status(400).json({ error: '徒歩時間は1〜60分の整数で入力してください' });
-      }
-    }
-    
-    const location = getLocationFromStation(station);
-    
-    const result = await pool.query(
-      'UPDATE cafes SET name = $1, location = $2, station = $3, google_maps_url = $4, walking_time = $5 WHERE id = $6 RETURNING *',
-      [name, location, station, googleMapsUrl, walkingTime || null, id]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: '喫茶店が見つかりません' });
-    }
-    
-    const updatedCafe: Place = {
-      id: result.rows[0].id,
-      name: result.rows[0].name,
-      location: result.rows[0].location,
-      station: result.rows[0].station,
-      googleMapsUrl: result.rows[0].google_maps_url,
-      walkingTime: result.rows[0].walking_time
-    };
-    
-    res.json(updatedCafe);
-  } catch (error) {
-    console.error('Error updating cafe:', error);
-    res.status(500).json({ error: 'Failed to update cafe' });
-  }
-});
-
-// 喫茶店の削除
-app.delete('/api/cafes/:id', async (req: express.Request, res: express.Response) => {
-  try {
-    const { id } = req.params;
-    
-    const result = await pool.query('DELETE FROM cafes WHERE id = $1 RETURNING *', [id]);
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: '喫茶店が見つかりません' });
-    }
-    
-    res.json({ message: '喫茶店を削除しました', id: parseInt(id) });
-  } catch (error) {
-    console.error('Error deleting cafe:', error);
-    res.status(500).json({ error: 'Failed to delete cafe' });
-  }
-});
-
-// 本屋の全件取得（管理用）
-app.get('/api/bookstores/all', async (req: express.Request, res: express.Response) => {
-  try {
-    const result = await pool.query('SELECT * FROM bookstores ORDER BY created_at DESC');
-    
-    const bookstores: Place[] = result.rows.map((row: any) => ({
-      id: row.id,
-      name: row.name,
-      location: row.location,
-      station: row.station,
-      googleMapsUrl: row.google_maps_url,
-      walkingTime: row.walking_time
-    }));
-
-    res.json(bookstores);
-  } catch (error) {
-    console.error('Error fetching all bookstores:', error);
-    res.status(500).json({ error: 'Failed to fetch bookstores' });
-  }
-});
+// 本屋一覧取得
 app.get('/api/bookstores', async (req: express.Request, res: express.Response) => {
   try {
     const { station } = req.query;
@@ -527,6 +309,7 @@ app.get('/api/bookstores', async (req: express.Request, res: express.Response) =
   }
 });
 
+// 本屋登録
 app.post('/api/bookstores', async (req: express.Request, res: express.Response) => {
   try {
     const { name, googleMapsUrl, station, walkingTime } = req.body;
@@ -566,90 +349,7 @@ app.post('/api/bookstores', async (req: express.Request, res: express.Response) 
   }
 });
 
-// 本屋の編集
-app.put('/api/bookstores/:id', async (req: express.Request, res: express.Response) => {
-  try {
-    const { id } = req.params;
-    const { name, googleMapsUrl, station, walkingTime } = req.body;
-    
-    if (!name || !googleMapsUrl || !station) {
-      return res.status(400).json({ error: '店舗名、Google Maps URL、最寄駅は必須です' });
-    }
-    
-    // 徒歩時間のバリデーション
-    if (walkingTime) {
-      const walkingTimeNum = parseInt(walkingTime);
-      if (isNaN(walkingTimeNum) || walkingTimeNum < 1 || walkingTimeNum > 60) {
-        return res.status(400).json({ error: '徒歩時間は1〜60分の整数で入力してください' });
-      }
-    }
-    
-    const location = getLocationFromStation(station);
-    
-    const result = await pool.query(
-      'UPDATE bookstores SET name = $1, location = $2, station = $3, google_maps_url = $4, walking_time = $5 WHERE id = $6 RETURNING *',
-      [name, location, station, googleMapsUrl, walkingTime || null, id]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: '本屋が見つかりません' });
-    }
-    
-    const updatedBookstore: Place = {
-      id: result.rows[0].id,
-      name: result.rows[0].name,
-      location: result.rows[0].location,
-      station: result.rows[0].station,
-      googleMapsUrl: result.rows[0].google_maps_url,
-      walkingTime: result.rows[0].walking_time
-    };
-    
-    res.json(updatedBookstore);
-  } catch (error) {
-    console.error('Error updating bookstore:', error);
-    res.status(500).json({ error: 'Failed to update bookstore' });
-  }
-});
-
-// 本屋の削除
-app.delete('/api/bookstores/:id', async (req: express.Request, res: express.Response) => {
-  try {
-    const { id } = req.params;
-    
-    const result = await pool.query('DELETE FROM bookstores WHERE id = $1 RETURNING *', [id]);
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: '本屋が見つかりません' });
-    }
-    
-    res.json({ message: '本屋を削除しました', id: parseInt(id) });
-  } catch (error) {
-    console.error('Error deleting bookstore:', error);
-    res.status(500).json({ error: 'Failed to delete bookstore' });
-  }
-});
-
-// バーの全件取得（管理用）
-app.get('/api/bars/all', async (req: express.Request, res: express.Response) => {
-  try {
-    const result = await pool.query('SELECT * FROM bars ORDER BY created_at DESC');
-    
-    const bars: Place[] = result.rows.map((row: any) => ({
-      id: row.id,
-      name: row.name,
-      location: row.location,
-      station: row.station,
-      googleMapsUrl: row.google_maps_url,
-      walkingTime: row.walking_time
-    }));
-
-    res.json(bars);
-  } catch (error) {
-    console.error('Error fetching all bars:', error);
-    res.status(500).json({ error: 'Failed to fetch bars' });
-  }
-});
-
+// バー一覧取得
 app.get('/api/bars', async (req: express.Request, res: express.Response) => {
   try {
     const { station } = req.query;
@@ -680,6 +380,7 @@ app.get('/api/bars', async (req: express.Request, res: express.Response) => {
   }
 });
 
+// バー登録
 app.post('/api/bars', async (req: express.Request, res: express.Response) => {
   try {
     const { name, googleMapsUrl, station, walkingTime } = req.body;
@@ -719,71 +420,9 @@ app.post('/api/bars', async (req: express.Request, res: express.Response) => {
   }
 });
 
-// バーの編集
-app.put('/api/bars/:id', async (req: express.Request, res: express.Response) => {
-  try {
-    const { id } = req.params;
-    const { name, googleMapsUrl, station, walkingTime } = req.body;
-    
-    if (!name || !googleMapsUrl || !station) {
-      return res.status(400).json({ error: '店舗名、Google Maps URL、最寄駅は必須です' });
-    }
-    
-    // 徒歩時間のバリデーション
-    if (walkingTime) {
-      const walkingTimeNum = parseInt(walkingTime);
-      if (isNaN(walkingTimeNum) || walkingTimeNum < 1 || walkingTimeNum > 60) {
-        return res.status(400).json({ error: '徒歩時間は1〜60分の整数で入力してください' });
-      }
-    }
-    
-    const location = getLocationFromStation(station);
-    
-    const result = await pool.query(
-      'UPDATE bars SET name = $1, location = $2, station = $3, google_maps_url = $4, walking_time = $5 WHERE id = $6 RETURNING *',
-      [name, location, station, googleMapsUrl, walkingTime || null, id]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'バーが見つかりません' });
-    }
-    
-    const updatedBar: Place = {
-      id: result.rows[0].id,
-      name: result.rows[0].name,
-      location: result.rows[0].location,
-      station: result.rows[0].station,
-      googleMapsUrl: result.rows[0].google_maps_url,
-      walkingTime: result.rows[0].walking_time
-    };
-    
-    res.json(updatedBar);
-  } catch (error) {
-    console.error('Error updating bar:', error);
-    res.status(500).json({ error: 'Failed to update bar' });
-  }
-});
-
-// バーの削除
-app.delete('/api/bars/:id', async (req: express.Request, res: express.Response) => {
-  try {
-    const { id } = req.params;
-    
-    const result = await pool.query('DELETE FROM bars WHERE id = $1 RETURNING *', [id]);
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'バーが見つかりません' });
-    }
-    
-    res.json({ message: 'バーを削除しました', id: parseInt(id) });
-  } catch (error) {
-    console.error('Error deleting bar:', error);
-    res.status(500).json({ error: 'Failed to delete bar' });
-  }
-});
-
+// 駅から区を取得するヘルパー関数
 function getLocationFromStation(station: string): string {
-  const stationToLocation: { [key: string]: string } = {
+  const stationLocationMap: { [key: string]: string } = {
     '渋谷駅': '渋谷区',
     '新宿駅': '新宿区',
     '池袋駅': '池袋区',
@@ -792,15 +431,15 @@ function getLocationFromStation(station: string): string {
     '上野駅': '台東区',
     '秋葉原駅': '千代田区',
     '原宿駅': '渋谷区',
-    '代官山駅': '渋谷区',
+    '代官山駅': '目黒区',
     '恵比寿駅': '渋谷区'
   };
   
-  return stationToLocation[station] || '東京都';
+  return stationLocationMap[station] || '不明';
 }
 
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`Database URL: ${process.env.DATABASE_URL ? 'Configured' : 'Not configured'}`);
+  console.log(`🚀 Server is running on port ${PORT}`);
+  console.log(`📚 ichidan-dokusho-place API ready`);
+  console.log(`🌐 http://localhost:${PORT}`);
 }); 
