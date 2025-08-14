@@ -103,13 +103,8 @@ function App() {
     e.preventDefault();
     
     try {
-<<<<<<< HEAD
       const endpoint = registrationForm.type === 'cafes' ? '/api/cafes' : registrationForm.type === 'bookstores' ? '/api/bookstores' : '/api/bars';
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-=======
-      const endpoint = registrationForm.type === 'cafes' ? '/api/cafes' : '/api/bookstores';
-      const response = await fetch(`http://localhost:3000${endpoint}`, {
->>>>>>> origin/main
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -123,7 +118,6 @@ function App() {
       });
 
       if (response.ok) {
-<<<<<<< HEAD
         // 登録成功後、データを再取得
         if (selectedStation) {
           const [cafesResponse, bookstoresResponse, barsResponse] = await Promise.all([
@@ -142,9 +136,6 @@ function App() {
         }
 
         // フォームをリセット
-=======
-        // 登録成功後、フォームをリセット
->>>>>>> origin/main
         setRegistrationForm({
           type: 'cafes',
           name: '',
@@ -153,25 +144,12 @@ function App() {
           walkingTime: ''
         });
         setShowRegistrationForm(false);
-        
-        // データを再取得
-        if (selectedStation) {
-          const [cafesResponse, bookstoresResponse] = await Promise.all([
-            fetch(`http://localhost:3000/api/cafes?station=${encodeURIComponent(selectedStation)}`),
-            fetch(`http://localhost:3000/api/bookstores?station=${encodeURIComponent(selectedStation)}`)
-          ]);
-          const cafesData = await cafesResponse.json();
-          const bookstoresData = await bookstoresResponse.json();
-          setCafes(cafesData);
-          setBookstores(bookstoresData);
-        }
       }
     } catch (error) {
       console.error('Failed to register place:', error);
     }
   };
 
-<<<<<<< HEAD
   // 駅登録処理
   const handleStationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -208,9 +186,7 @@ function App() {
     }
   };
 
-=======
   // 徒歩時間を表示用にフォーマットする関数
->>>>>>> origin/main
   const formatWalkingTime = (walkingTime: string): string => {
     if (!walkingTime) return '';
     // 数字のみの場合は「分」を付ける
@@ -493,7 +469,6 @@ function App() {
                 📍 場所
               </button>
             </div>
-<<<<<<< HEAD
 
             {/* 駅登録フォーム */}
             {showStationForm && (
@@ -536,10 +511,7 @@ function App() {
                 </form>
               </div>
             )}
-
-=======
             
->>>>>>> origin/main
             {showRegistrationForm && (
               <form onSubmit={handleRegistrationSubmit} className="space-y-4">
                 <div>
