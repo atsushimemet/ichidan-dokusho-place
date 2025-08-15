@@ -227,9 +227,11 @@ app.get('/api/stations/all', async (req: express.Request, res: express.Response)
 // 駅登録
 app.post('/api/stations', async (req: express.Request, res: express.Response) => {
   try {
+    console.log('🚉 Station registration attempt:', req.body);
     const { name, location } = req.body;
     
     if (!name || !location) {
+      console.log('❌ Validation failed: missing name or location');
       return res.status(400).json({ error: '駅名と地域は必須です' });
     }
     
@@ -244,14 +246,50 @@ app.post('/api/stations', async (req: express.Request, res: express.Response) =>
       location: result.rows[0].location
     };
     
+    console.log('✅ Station created successfully:', newStation);
     res.status(201).json(newStation);
-  } catch (error) {
-    console.error('Error creating station:', error);
+  } catch (error: any) {
+    console.error('❌ Error creating station:', error);
     if (error.code === '23505') { // UNIQUE violation
       res.status(400).json({ error: 'この駅名は既に登録されています' });
     } else {
       res.status(500).json({ error: 'Failed to create station' });
     }
+  }
+});
+
+// 駅編集
+app.put('/api/stations/:id', async (req: express.Request, res: express.Response) => {
+  try {
+    const { id } = req.params;
+    const { name, location } = req.body;
+    
+    if (!name || !location) {
+      return res.status(400).json({ error: '駅名と地域は必須です' });
+    }
+    
+    const result = await pool.query(
+      'UPDATE stations SET name = $1, location = $2 WHERE id = $3 RETURNING *',
+      [name, location, id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: '駅が見つかりません' });
+    }
+    
+    const updatedStation: Station = {
+      id: result.rows[0].id,
+      name: result.rows[0].name,
+      location: result.rows[0].location
+    };
+    
+    res.json(updatedStation);
+  } catch (error: any) {
+    if (error.code === '23505') { // UNIQUE制約違反
+      return res.status(400).json({ error: 'この駅名は既に登録されています' });
+    }
+    console.error('Error updating station:', error);
+    res.status(500).json({ error: 'Failed to update station' });
   }
 });
 
@@ -618,4 +656,7 @@ app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
   console.log(`📚 ichidan-dokusho-place API ready`);
   console.log(`🌐 http://localhost:${PORT}`);
+  console.log(`🗄️ Database URL: ${process.env.DATABASE_URL ? 'Connected' : 'Not set'}`);
+  console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌍 CORS Origins:`, corsOptions.origin);
 }); 
