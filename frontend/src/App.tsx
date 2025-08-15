@@ -54,19 +54,120 @@ function HomePage() {
     name: '',
     location: ''
   })
+  // エラー関連のstate
+  const [error, setError] = useState<string | null>(null)
+  const [debugMode, setDebugMode] = useState(false)
+  const [apiErrors, setApiErrors] = useState<{[key: string]: any}>({})
+  
+  // スマホデバッグ機能
+  const [mobileConsole, setMobileConsole] = useState<string[]>([])
+  const [showMobileConsole, setShowMobileConsole] = useState(false)
+  const [networkLogs, setNetworkLogs] = useState<any[]>([])
+  
+  // ログを追加する関数
+  const addMobileLog = (message: string, type: 'info' | 'error' | 'warn' | 'network' = 'info') => {
+    const timestamp = new Date().toLocaleTimeString()
+    const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}`
+    setMobileConsole(prev => [...prev.slice(-49), logEntry]) // 最新50件を保持
+  }
+  
+  // ネットワークログを追加する関数
+  const addNetworkLog = (method: string, url: string, status?: number, data?: any) => {
+    const timestamp = new Date().toLocaleTimeString()
+    const logEntry = {
+      timestamp,
+      method,
+      url,
+      status,
+      data,
+      id: Date.now()
+    }
+    setNetworkLogs(prev => [...prev.slice(-19), logEntry]) // 最新20件を保持
+  }
+  
+  // エラーをクリアする関数
+  const clearError = () => {
+    setError(null)
+    setApiErrors({})
+  }
+  
+  // デバッグログをクリア
+  const clearDebugLogs = () => {
+    setMobileConsole([])
+    setNetworkLogs([])
+  }
+  
+  // API接続テスト
+  const testApiConnection = async () => {
+    addMobileLog('API接続テスト開始', 'info')
+    try {
+      const response = await fetch(`${API_BASE_URL}/health`)
+      addNetworkLog('GET', `${API_BASE_URL}/health`, response.status)
+      const data = await response.json()
+      addMobileLog(`API接続テスト結果: ${data.status}`, response.ok ? 'info' : 'error')
+    } catch (error) {
+      addMobileLog(`API接続エラー: ${error}`, 'error')
+    }
+  }
+  
+  // データ再取得
+  const refreshAllData = async () => {
+    addMobileLog('全データ再取得開始', 'info')
+    if (selectedStation) {
+      try {
+        const [cafesResponse, bookstoresResponse, barsResponse] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/cafes?station=${encodeURIComponent(selectedStation)}`),
+          fetch(`${API_BASE_URL}/api/bookstores?station=${encodeURIComponent(selectedStation)}`),
+          fetch(`${API_BASE_URL}/api/bars?station=${encodeURIComponent(selectedStation)}`)
+        ])
+        
+        const cafesData = await cafesResponse.json()
+        const bookstoresData = await bookstoresResponse.json()
+        const barsData = await barsResponse.json()
+        
+        setCafes(cafesData)
+        setBookstores(bookstoresData)
+        setBars(barsData)
+        
+        addMobileLog(`データ再取得完了: カフェ${cafesData.length}件, 本屋${bookstoresData.length}件, バー${barsData.length}件`, 'info')
+      } catch (error) {
+        addMobileLog(`データ再取得エラー: ${error}`, 'error')
+      }
+    }
+  }
 
   useEffect(() => {
     const fetchStations = async () => {
       try {
+        addMobileLog('駅データ取得開始', 'info')
+        addNetworkLog('GET', `${API_BASE_URL}/api/stations`)
+        
         const response = await fetch(`${API_BASE_URL}/api/stations`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
         const data = await response.json();
+        
+        addNetworkLog('GET', `${API_BASE_URL}/api/stations`, response.status, data)
+        addMobileLog(`駅データ取得成功: ${data.length}件`, 'info')
+        
         setStations(data);
+        clearError(); // 成功時はエラーをクリア
       } catch (error) {
         console.error('Failed to fetch stations:', error);
+        const errorMessage = `駅データの取得に失敗: ${error instanceof Error ? error.message : String(error)}`;
+        
+        addMobileLog(errorMessage, 'error')
+        addNetworkLog('GET', `${API_BASE_URL}/api/stations`, 0, error)
+        
+        setError(errorMessage);
+        setApiErrors(prev => ({...prev, stations: error}));
+        // フォールバック: ハードコードされた駅リスト
         setStations([
           '渋谷駅', '新宿駅', '池袋駅', '東京駅', '品川駅',
           '上野駅', '秋葉原駅', '原宿駅', '代官山駅', '恵比寿駅'
         ]);
+        addMobileLog('フォールバック駅リストを使用', 'warn')
       }
     };
     fetchStations();
@@ -83,6 +184,17 @@ function HomePage() {
             fetch(`${API_BASE_URL}/api/bars?station=${encodeURIComponent(selectedStation)}`)
           ]);
 
+          // レスポンスステータスをチェック
+          if (!cafesResponse.ok) {
+            throw new Error(`喫茶店データ取得失敗: HTTP ${cafesResponse.status}`);
+          }
+          if (!bookstoresResponse.ok) {
+            throw new Error(`本屋データ取得失敗: HTTP ${bookstoresResponse.status}`);
+          }
+          if (!barsResponse.ok) {
+            throw new Error(`バーデータ取得失敗: HTTP ${barsResponse.status}`);
+          }
+
           const cafesData = await cafesResponse.json();
           const bookstoresData = await bookstoresResponse.json();
           const barsData = await barsResponse.json();
@@ -90,8 +202,12 @@ function HomePage() {
           setCafes(cafesData);
           setBookstores(bookstoresData);
           setBars(barsData);
+          clearError(); // 成功時はエラーをクリア
         } catch (error) {
           console.error('Failed to fetch places:', error);
+          const errorMessage = `${selectedStation}のデータ取得に失敗: ${error instanceof Error ? error.message : String(error)}`;
+          setError(errorMessage);
+          setApiErrors(prev => ({...prev, places: error}));
           setCafes([]);
           setBookstores([]);
           setBars([]);
@@ -152,15 +268,33 @@ function HomePage() {
           walkingTime: ''
         });
         setShowRegistrationForm(false);
+        clearError(); // 成功時はエラーをクリア
+        alert('場所を登録しました！');
+      } else {
+        const errorData = await response.json();
+        const errorMessage = `場所の登録に失敗: ${errorData.error || 'サーバーエラー'}`;
+        setError(errorMessage);
+        setApiErrors(prev => ({...prev, registration: errorData}));
+        alert(errorMessage);
       }
     } catch (error) {
       console.error('Failed to register place:', error);
+      const errorMessage = `場所の登録に失敗: ${error instanceof Error ? error.message : String(error)}`;
+      setError(errorMessage);
+      setApiErrors(prev => ({...prev, registration: error}));
+      alert(errorMessage);
     }
   };
 
   // 駅登録処理
   const handleStationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('🚉 Submitting station form:', stationForm);
+    console.log('🌐 API URL:', `${API_BASE_URL}/api/stations`);
+    
+    addMobileLog(`駅登録開始: ${stationForm.name} (${stationForm.location})`, 'info')
+    addNetworkLog('POST', `${API_BASE_URL}/api/stations`, undefined, stationForm)
     
     try {
       const response = await fetch(`${API_BASE_URL}/api/stations`, {
@@ -172,10 +306,16 @@ function HomePage() {
       });
 
       if (response.ok) {
+        const result = await response.json();
+        addNetworkLog('POST', `${API_BASE_URL}/api/stations`, response.status, result)
+        addMobileLog(`駅登録成功: ${stationForm.name}`, 'info')
+        
         // 駅登録成功後、駅一覧を再取得
         const stationsResponse = await fetch(`${API_BASE_URL}/api/stations`);
         const stationsData = await stationsResponse.json();
         setStations(stationsData);
+        
+        addMobileLog(`駅一覧更新: ${stationsData.length}件`, 'info')
 
         // フォームをリセット
         setStationForm({
@@ -183,14 +323,32 @@ function HomePage() {
           location: ''
         });
         setShowStationForm(false);
+        clearError(); // 成功時はエラーをクリア
         alert('駅を登録しました！');
       } else {
-        const error = await response.json();
-        alert(`駅の登録に失敗しました: ${error.error}`);
+        const errorData = await response.json();
+        console.error('❌ Station registration failed:', response.status, errorData);
+        
+        addNetworkLog('POST', `${API_BASE_URL}/api/stations`, response.status, errorData)
+        addMobileLog(`駅登録失敗 (${response.status}): ${errorData.error}`, 'error')
+        
+        const errorMessage = `駅の登録に失敗 (${response.status}): ${errorData.error || 'サーバーエラー'}`;
+        const debugInfo = `送信データ: ${JSON.stringify(stationForm)}`;
+        setError(`${errorMessage}\n${debugInfo}`);
+        setApiErrors(prev => ({...prev, stationRegistration: {...errorData, requestData: stationForm, status: response.status}}));
+        alert(errorMessage);
       }
     } catch (error) {
-      console.error('Failed to register station:', error);
-      alert('駅の登録に失敗しました');
+      console.error('❌ Network error during station registration:', error);
+      
+      addNetworkLog('POST', `${API_BASE_URL}/api/stations`, 0, error)
+      addMobileLog(`ネットワークエラー: ${error instanceof Error ? error.message : String(error)}`, 'error')
+      
+      const errorMessage = `駅の登録に失敗 (ネットワークエラー): ${error instanceof Error ? error.message : String(error)}`;
+      const debugInfo = `送信データ: ${JSON.stringify(stationForm)}, API: ${API_BASE_URL}`;
+      setError(`${errorMessage}\n${debugInfo}`);
+      setApiErrors(prev => ({...prev, stationRegistration: {error, requestData: stationForm, apiUrl: API_BASE_URL}}));
+      alert(errorMessage);
     }
   };
 
@@ -211,9 +369,27 @@ function HomePage() {
       <header className="w-full bg-white shadow-sm border-b border-primary-200 sticky top-0 z-10">
         <div className="max-w-md mx-auto px-6 py-4 sm:py-6">
           <div className="text-center">
-            <h1 className="text-xl sm:text-2xl font-bold text-primary-900 border-b-2 border-primary-200 pb-2">
-              ichidan-dokusho-place
-            </h1>
+            <div className="flex justify-between items-center mb-2">
+              <div className="flex-1">
+                <h1 className="text-xl sm:text-2xl font-bold text-primary-900 border-b-2 border-primary-200 pb-2">
+                  ichidan-dokusho-place
+                </h1>
+              </div>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setDebugMode(!debugMode)}
+                  className={`text-xs px-2 py-1 rounded ${debugMode ? 'bg-blue-200 text-blue-700' : 'bg-gray-200 text-gray-600'}`}
+                >
+                  🐛
+                </button>
+                <button
+                  onClick={() => setShowMobileConsole(!showMobileConsole)}
+                  className={`text-xs px-2 py-1 rounded ${showMobileConsole ? 'bg-green-200 text-green-700' : 'bg-gray-200 text-gray-600'}`}
+                >
+                  📱
+                </button>
+              </div>
+            </div>
             <p className="text-primary-600 mt-3 text-sm sm:text-base">
               読書に集中できる場所を見つけよう
             </p>
@@ -221,6 +397,143 @@ function HomePage() {
           </div>
         </div>
       </header>
+
+      {/* エラー表示 */}
+      {error && (
+        <div className="w-full max-w-md px-6 mt-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="text-red-800 font-medium text-sm">⚠️ エラー</h3>
+                <p className="text-red-600 text-xs mt-1">{error}</p>
+                <p className="text-xs text-red-500 mt-1">
+                  API: {API_BASE_URL}
+                </p>
+              </div>
+              <button
+                onClick={clearError}
+                className="text-red-500 hover:text-red-700 text-sm"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* デバッグ情報 */}
+      {debugMode && (
+        <div className="w-full max-w-md px-6 mt-4">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+            <h3 className="text-gray-800 font-medium mb-2 text-sm">🐛 DEBUG</h3>
+            <div className="space-y-1 text-xs text-gray-600">
+              <div>API: {API_BASE_URL}</div>
+              <div>駅: {selectedStation || '未選択'}</div>
+              <div>駅数: {stations.length}</div>
+              <div>カフェ: {cafes.length}</div>
+              <div>本屋: {bookstores.length}</div>
+              <div>バー: {bars.length}</div>
+              <div>読込中: {loading ? 'Yes' : 'No'}</div>
+              {Object.keys(apiErrors).length > 0 && (
+                <details className="mt-2">
+                  <summary className="cursor-pointer text-red-600">エラー詳細</summary>
+                  <pre className="mt-1 text-xs bg-gray-100 p-2 rounded overflow-auto max-h-32">
+                    {JSON.stringify(apiErrors, null, 2)}
+                  </pre>
+                </details>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* スマホコンソール */}
+      {showMobileConsole && (
+        <div className="w-full max-w-md px-6 mt-4">
+          <div className="bg-black text-green-400 rounded-lg p-3 font-mono text-xs">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-green-300 font-bold">📱 モバイルコンソール</h3>
+              <div className="flex gap-1">
+                <button
+                  onClick={clearDebugLogs}
+                  className="text-red-400 hover:text-red-300 px-2 py-1 bg-gray-800 rounded text-xs"
+                >
+                  Clear
+                </button>
+                <button
+                  onClick={() => setShowMobileConsole(false)}
+                  className="text-gray-400 hover:text-gray-300 px-2 py-1 bg-gray-800 rounded text-xs"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            
+            {/* クイックアクション */}
+            <div className="flex gap-1 mb-2 flex-wrap">
+              <button
+                onClick={testApiConnection}
+                className="text-blue-300 hover:text-blue-200 px-2 py-1 bg-gray-800 rounded text-xs"
+              >
+                API Test
+              </button>
+              <button
+                onClick={refreshAllData}
+                className="text-green-300 hover:text-green-200 px-2 py-1 bg-gray-800 rounded text-xs"
+              >
+                Refresh
+              </button>
+              <button
+                onClick={() => addMobileLog(`現在の状況: 駅=${selectedStation}, カフェ=${cafes.length}, 本屋=${bookstores.length}, バー=${bars.length}`, 'info')}
+                className="text-yellow-300 hover:text-yellow-200 px-2 py-1 bg-gray-800 rounded text-xs"
+              >
+                Status
+              </button>
+            </div>
+            
+            <div className="max-h-64 overflow-y-auto space-y-1">
+              {mobileConsole.length === 0 ? (
+                <div className="text-gray-500">ログがありません</div>
+              ) : (
+                mobileConsole.map((log, index) => (
+                  <div 
+                    key={index} 
+                    className={`${
+                      log.includes('ERROR') ? 'text-red-400' :
+                      log.includes('WARN') ? 'text-yellow-400' :
+                      log.includes('NETWORK') ? 'text-blue-400' :
+                      'text-green-400'
+                    }`}
+                  >
+                    {log}
+                  </div>
+                ))
+              )}
+            </div>
+            
+            {networkLogs.length > 0 && (
+              <details className="mt-2">
+                <summary className="text-blue-300 cursor-pointer">ネットワークログ ({networkLogs.length})</summary>
+                <div className="mt-1 max-h-32 overflow-y-auto space-y-1">
+                  {networkLogs.map((log) => (
+                    <div key={log.id} className="text-xs">
+                      <div className={`${log.status >= 200 && log.status < 300 ? 'text-green-400' : 'text-red-400'}`}>
+                        [{log.timestamp}] {log.method} {log.url.split('/').pop()} 
+                        {log.status ? ` - ${log.status}` : ' - PENDING'}
+                      </div>
+                      {log.data && (
+                        <div className="text-gray-400 ml-2 truncate">
+                          {typeof log.data === 'object' ? JSON.stringify(log.data).slice(0, 100) : String(log.data).slice(0, 100)}...
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </details>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* メインコンテンツ */}
       <main className="w-full max-w-md px-6 py-6 flex-1">
