@@ -1,5 +1,12 @@
+import { Routes, Route } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import './App.css';
+import AdminLayout from './AdminLayout';
+import AdminDashboard from './AdminDashboard';
+import AdminStations from './AdminStations';
+import AdminCafes from './AdminCafes';
+import AdminBooks from './AdminBooks';
+import AdminBars from './AdminBars';
 
 interface Place {
   id: number;
@@ -25,7 +32,8 @@ interface StationForm {
 
 // API URLを環境変数から取得（開発時はlocalhost、本番時はRenderのURL）
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-function App() {
+
+function HomePage() {
   const [selectedStation, setSelectedStation] = useState('')
   const [activeTab, setActiveTab] = useState<'cafes' | 'bookstores' | 'bars'>('cafes')
   const [cafes, setCafes] = useState<Place[]>([])
@@ -670,6 +678,21 @@ function App() {
       </footer>
     </div>
   )
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route index element={<AdminDashboard />} />
+        <Route path="stations" element={<AdminStations />} />
+        <Route path="shop/cafes" element={<AdminCafes />} />
+        <Route path="shop/books" element={<AdminBooks />} />
+        <Route path="shop/bars" element={<AdminBars />} />
+      </Route>
+    </Routes>
+  );
 }
 
 export default App
