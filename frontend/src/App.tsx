@@ -207,6 +207,9 @@ function HomePage() {
   const handleStationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('🚉 Submitting station form:', stationForm);
+    console.log('🌐 API URL:', `${API_BASE_URL}/api/stations`);
+    
     try {
       const response = await fetch(`${API_BASE_URL}/api/stations`, {
         method: 'POST',
@@ -232,16 +235,19 @@ function HomePage() {
         alert('駅を登録しました！');
       } else {
         const errorData = await response.json();
-        const errorMessage = `駅の登録に失敗: ${errorData.error || 'サーバーエラー'}`;
-        setError(errorMessage);
-        setApiErrors(prev => ({...prev, stationRegistration: errorData}));
+        console.error('❌ Station registration failed:', response.status, errorData);
+        const errorMessage = `駅の登録に失敗 (${response.status}): ${errorData.error || 'サーバーエラー'}`;
+        const debugInfo = `送信データ: ${JSON.stringify(stationForm)}`;
+        setError(`${errorMessage}\n${debugInfo}`);
+        setApiErrors(prev => ({...prev, stationRegistration: {...errorData, requestData: stationForm, status: response.status}}));
         alert(errorMessage);
       }
     } catch (error) {
-      console.error('Failed to register station:', error);
-      const errorMessage = `駅の登録に失敗: ${error instanceof Error ? error.message : String(error)}`;
-      setError(errorMessage);
-      setApiErrors(prev => ({...prev, stationRegistration: error}));
+      console.error('❌ Network error during station registration:', error);
+      const errorMessage = `駅の登録に失敗 (ネットワークエラー): ${error instanceof Error ? error.message : String(error)}`;
+      const debugInfo = `送信データ: ${JSON.stringify(stationForm)}, API: ${API_BASE_URL}`;
+      setError(`${errorMessage}\n${debugInfo}`);
+      setApiErrors(prev => ({...prev, stationRegistration: {error, requestData: stationForm, apiUrl: API_BASE_URL}}));
       alert(errorMessage);
     }
   };

@@ -228,11 +228,20 @@ app.get('/api/stations/all', async (req: express.Request, res: express.Response)
 app.post('/api/stations', async (req: express.Request, res: express.Response) => {
   try {
     console.log('🚉 Station registration attempt:', req.body);
+    console.log('🚉 Request headers:', req.headers);
     const { name, location } = req.body;
     
     if (!name || !location) {
       console.log('❌ Validation failed: missing name or location');
+      console.log('❌ Name:', name, 'Location:', location);
       return res.status(400).json({ error: '駅名と地域は必須です' });
+    }
+    
+    // 既存の駅をチェック
+    const existingStation = await pool.query('SELECT * FROM stations WHERE name = $1', [name]);
+    if (existingStation.rows.length > 0) {
+      console.log('❌ Station already exists:', existingStation.rows[0]);
+      return res.status(400).json({ error: 'この駅名は既に登録されています' });
     }
     
     const result = await pool.query(
