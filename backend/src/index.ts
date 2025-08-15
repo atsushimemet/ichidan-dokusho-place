@@ -207,6 +207,40 @@ app.get('/api/stations', async (req: express.Request, res: express.Response) => 
   }
 });
 
+// 駅一覧取得（管理画面用）
+app.get('/api/stations/all', async (req: express.Request, res: express.Response) => {
+  try {
+    const result = await pool.query('SELECT * FROM stations ORDER BY created_at DESC');
+    const stations: Station[] = result.rows.map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      location: row.location,
+      created_at: row.created_at
+    }));
+    res.json(stations);
+  } catch (error) {
+    console.error('Error fetching all stations:', error);
+    res.status(500).json({ error: 'Failed to fetch stations' });
+  }
+});
+
+// 駅削除（管理画面用）
+app.delete('/api/stations/:id', async (req: express.Request, res: express.Response) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('DELETE FROM stations WHERE id = $1 RETURNING *', [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Station not found' });
+    }
+    
+    res.json({ message: 'Station deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting station:', error);
+    res.status(500).json({ error: 'Failed to delete station' });
+  }
+});
+
 // 喫茶店一覧取得
 app.get('/api/cafes', async (req: express.Request, res: express.Response) => {
   try {
@@ -235,6 +269,43 @@ app.get('/api/cafes', async (req: express.Request, res: express.Response) => {
   } catch (error) {
     console.error('Error fetching cafes:', error);
     res.status(500).json({ error: 'Failed to fetch cafes' });
+  }
+});
+
+// 喫茶店一覧取得（管理画面用）
+app.get('/api/cafes/all', async (req: express.Request, res: express.Response) => {
+  try {
+    const result = await pool.query('SELECT * FROM cafes ORDER BY created_at DESC');
+    const cafes = result.rows.map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      location: row.location,
+      station: row.station,
+      google_maps_url: row.google_maps_url,
+      walking_time: row.walking_time,
+      created_at: row.created_at
+    }));
+    res.json(cafes);
+  } catch (error) {
+    console.error('Error fetching all cafes:', error);
+    res.status(500).json({ error: 'Failed to fetch cafes' });
+  }
+});
+
+// 喫茶店削除（管理画面用）
+app.delete('/api/cafes/:id', async (req: express.Request, res: express.Response) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('DELETE FROM cafes WHERE id = $1 RETURNING *', [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Cafe not found' });
+    }
+    
+    res.json({ message: 'Cafe deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting cafe:', error);
+    res.status(500).json({ error: 'Failed to delete cafe' });
   }
 });
 
@@ -309,6 +380,43 @@ app.get('/api/bookstores', async (req: express.Request, res: express.Response) =
   }
 });
 
+// 本屋一覧取得（管理画面用）
+app.get('/api/bookstores/all', async (req: express.Request, res: express.Response) => {
+  try {
+    const result = await pool.query('SELECT * FROM bookstores ORDER BY created_at DESC');
+    const bookstores = result.rows.map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      location: row.location,
+      station: row.station,
+      google_maps_url: row.google_maps_url,
+      walking_time: row.walking_time,
+      created_at: row.created_at
+    }));
+    res.json(bookstores);
+  } catch (error) {
+    console.error('Error fetching all bookstores:', error);
+    res.status(500).json({ error: 'Failed to fetch bookstores' });
+  }
+});
+
+// 本屋削除（管理画面用）
+app.delete('/api/bookstores/:id', async (req: express.Request, res: express.Response) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('DELETE FROM bookstores WHERE id = $1 RETURNING *', [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Bookstore not found' });
+    }
+    
+    res.json({ message: 'Bookstore deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting bookstore:', error);
+    res.status(500).json({ error: 'Failed to delete bookstore' });
+  }
+});
+
 // 本屋登録
 app.post('/api/bookstores', async (req: express.Request, res: express.Response) => {
   try {
@@ -377,6 +485,43 @@ app.get('/api/bars', async (req: express.Request, res: express.Response) => {
   } catch (error) {
     console.error('Error fetching bars:', error);
     res.status(500).json({ error: 'Failed to fetch bars' });
+  }
+});
+
+// バー一覧取得（管理画面用）
+app.get('/api/bars/all', async (req: express.Request, res: express.Response) => {
+  try {
+    const result = await pool.query('SELECT * FROM bars ORDER BY created_at DESC');
+    const bars = result.rows.map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      location: row.location,
+      station: row.station,
+      google_maps_url: row.google_maps_url,
+      walking_time: row.walking_time,
+      created_at: row.created_at
+    }));
+    res.json(bars);
+  } catch (error) {
+    console.error('Error fetching all bars:', error);
+    res.status(500).json({ error: 'Failed to fetch bars' });
+  }
+});
+
+// バー削除（管理画面用）
+app.delete('/api/bars/:id', async (req: express.Request, res: express.Response) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('DELETE FROM bars WHERE id = $1 RETURNING *', [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Bar not found' });
+    }
+    
+    res.json({ message: 'Bar deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting bar:', error);
+    res.status(500).json({ error: 'Failed to delete bar' });
   }
 });
 

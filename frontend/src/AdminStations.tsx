@@ -67,10 +67,10 @@ function AdminStations() {
   }
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">駅一覧</h1>
-        <p className="mt-2 text-gray-600">登録されている駅の一覧です</p>
+    <div className="space-y-6">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">駅一覧</h1>
+        <p className="mt-2 text-gray-600 text-sm sm:text-base">登録されている駅の一覧です</p>
       </div>
 
       {error && (
@@ -79,7 +79,7 @@ function AdminStations() {
         </div>
       )}
 
-      <div className="bg-white shadow rounded-lg overflow-hidden">
+      <div className="bg-white shadow-md rounded-lg overflow-hidden">
         <div className="px-4 py-5 sm:p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg leading-6 font-medium text-gray-900">
@@ -92,60 +92,103 @@ function AdminStations() {
               <div className="text-gray-500 text-lg">登録されている駅がありません</div>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      ID
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      駅名
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      所在地
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      登録日時
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      操作
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {stations.map((station) => (
-                    <tr key={station.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {station.id}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          🚉 {station.name}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {station.location}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {station.created_at 
-                          ? new Date(station.created_at).toLocaleDateString('ja-JP')
-                          : '-'
-                        }
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => handleDelete(station.id, station.name)}
-                          className="text-red-600 hover:text-red-900 ml-4"
-                        >
-                          削除
-                        </button>
-                      </td>
+            <>
+              {/* モバイル表示: カード形式 */}
+              <div className="block sm:hidden space-y-4">
+                {stations.map((station) => (
+                  <div key={station.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center">
+                        <span className="text-xl mr-2">🚉</span>
+                        <h4 className="text-lg font-medium text-gray-900">{station.name}</h4>
+                      </div>
+                      <span className="text-sm text-gray-500">ID: {station.id}</span>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div>
+                        <span className="text-sm font-medium text-gray-500">所在地:</span>
+                        <span className="text-sm text-gray-900 ml-2">{station.location}</span>
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-gray-500">登録日時:</span>
+                        <span className="text-sm text-gray-900 ml-2">
+                          {station.created_at 
+                            ? new Date(station.created_at).toLocaleDateString('ja-JP')
+                            : '-'
+                          }
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-gray-200">
+                      <button
+                        onClick={() => handleDelete(station.id, station.name)}
+                        className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
+                      >
+                        削除
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* デスクトップ表示: テーブル形式 */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        ID
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        駅名
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        所在地
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        登録日時
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        操作
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {stations.map((station) => (
+                      <tr key={station.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {station.id}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            🚉 {station.name}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {station.location}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {station.created_at 
+                            ? new Date(station.created_at).toLocaleDateString('ja-JP')
+                            : '-'
+                          }
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button
+                            onClick={() => handleDelete(station.id, station.name)}
+                            className="text-red-600 hover:text-red-900 ml-4"
+                          >
+                            削除
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       </div>
