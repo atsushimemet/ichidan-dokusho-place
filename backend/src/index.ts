@@ -224,6 +224,37 @@ app.get('/api/stations/all', async (req: express.Request, res: express.Response)
   }
 });
 
+// 駅登録
+app.post('/api/stations', async (req: express.Request, res: express.Response) => {
+  try {
+    const { name, location } = req.body;
+    
+    if (!name || !location) {
+      return res.status(400).json({ error: '駅名と地域は必須です' });
+    }
+    
+    const result = await pool.query(
+      'INSERT INTO stations (name, location) VALUES ($1, $2) RETURNING *',
+      [name, location]
+    );
+    
+    const newStation: Station = {
+      id: result.rows[0].id,
+      name: result.rows[0].name,
+      location: result.rows[0].location
+    };
+    
+    res.status(201).json(newStation);
+  } catch (error) {
+    console.error('Error creating station:', error);
+    if (error.code === '23505') { // UNIQUE violation
+      res.status(400).json({ error: 'この駅名は既に登録されています' });
+    } else {
+      res.status(500).json({ error: 'Failed to create station' });
+    }
+  }
+});
+
 // 駅削除（管理画面用）
 app.delete('/api/stations/:id', async (req: express.Request, res: express.Response) => {
   try {

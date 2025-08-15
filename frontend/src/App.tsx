@@ -54,15 +54,33 @@ function HomePage() {
     name: '',
     location: ''
   })
+  // エラー関連のstate
+  const [error, setError] = useState<string | null>(null)
+  const [debugMode, setDebugMode] = useState(false)
+  const [apiErrors, setApiErrors] = useState<{[key: string]: any}>({})
+  
+  // エラーをクリアする関数
+  const clearError = () => {
+    setError(null)
+    setApiErrors({})
+  }
 
   useEffect(() => {
     const fetchStations = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/api/stations`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
         const data = await response.json();
         setStations(data);
+        clearError(); // 成功時はエラーをクリア
       } catch (error) {
         console.error('Failed to fetch stations:', error);
+        const errorMessage = `駅データの取得に失敗: ${error instanceof Error ? error.message : String(error)}`;
+        setError(errorMessage);
+        setApiErrors(prev => ({...prev, stations: error}));
+        // フォールバック: ハードコードされた駅リスト
         setStations([
           '渋谷駅', '新宿駅', '池袋駅', '東京駅', '品川駅',
           '上野駅', '秋葉原駅', '原宿駅', '代官山駅', '恵比寿駅'
@@ -83,6 +101,17 @@ function HomePage() {
             fetch(`${API_BASE_URL}/api/bars?station=${encodeURIComponent(selectedStation)}`)
           ]);
 
+          // レスポンスステータスをチェック
+          if (!cafesResponse.ok) {
+            throw new Error(`喫茶店データ取得失敗: HTTP ${cafesResponse.status}`);
+          }
+          if (!bookstoresResponse.ok) {
+            throw new Error(`本屋データ取得失敗: HTTP ${bookstoresResponse.status}`);
+          }
+          if (!barsResponse.ok) {
+            throw new Error(`バーデータ取得失敗: HTTP ${barsResponse.status}`);
+          }
+
           const cafesData = await cafesResponse.json();
           const bookstoresData = await bookstoresResponse.json();
           const barsData = await barsResponse.json();
@@ -90,8 +119,12 @@ function HomePage() {
           setCafes(cafesData);
           setBookstores(bookstoresData);
           setBars(barsData);
+          clearError(); // 成功時はエラーをクリア
         } catch (error) {
           console.error('Failed to fetch places:', error);
+          const errorMessage = `${selectedStation}のデータ取得に失敗: ${error instanceof Error ? error.message : String(error)}`;
+          setError(errorMessage);
+          setApiErrors(prev => ({...prev, places: error}));
           setCafes([]);
           setBookstores([]);
           setBars([]);
@@ -152,9 +185,21 @@ function HomePage() {
           walkingTime: ''
         });
         setShowRegistrationForm(false);
+        clearError(); // 成功時はエラーをクリア
+        alert('場所を登録しました！');
+      } else {
+        const errorData = await response.json();
+        const errorMessage = `場所の登録に失敗: ${errorData.error || 'サーバーエラー'}`;
+        setError(errorMessage);
+        setApiErrors(prev => ({...prev, registration: errorData}));
+        alert(errorMessage);
       }
     } catch (error) {
       console.error('Failed to register place:', error);
+      const errorMessage = `場所の登録に失敗: ${error instanceof Error ? error.message : String(error)}`;
+      setError(errorMessage);
+      setApiErrors(prev => ({...prev, registration: error}));
+      alert(errorMessage);
     }
   };
 
@@ -183,14 +228,21 @@ function HomePage() {
           location: ''
         });
         setShowStationForm(false);
+        clearError(); // 成功時はエラーをクリア
         alert('駅を登録しました！');
       } else {
-        const error = await response.json();
-        alert(`駅の登録に失敗しました: ${error.error}`);
+        const errorData = await response.json();
+        const errorMessage = `駅の登録に失敗: ${errorData.error || 'サーバーエラー'}`;
+        setError(errorMessage);
+        setApiErrors(prev => ({...prev, stationRegistration: errorData}));
+        alert(errorMessage);
       }
     } catch (error) {
       console.error('Failed to register station:', error);
-      alert('駅の登録に失敗しました');
+      const errorMessage = `駅の登録に失敗: ${error instanceof Error ? error.message : String(error)}`;
+      setError(errorMessage);
+      setApiErrors(prev => ({...prev, stationRegistration: error}));
+      alert(errorMessage);
     }
   };
 
@@ -211,9 +263,19 @@ function HomePage() {
       <header className="w-full bg-white shadow-sm border-b border-primary-200 sticky top-0 z-10">
         <div className="max-w-md mx-auto px-6 py-4 sm:py-6">
           <div className="text-center">
-            <h1 className="text-xl sm:text-2xl font-bold text-primary-900 border-b-2 border-primary-200 pb-2">
-              ichidan-dokusho-place
-            </h1>
+            <div className="flex justify-between items-center mb-2">
+              <div className="flex-1">
+                <h1 className="text-xl sm:text-2xl font-bold text-primary-900 border-b-2 border-primary-200 pb-2">
+                  ichidan-dokusho-place
+                </h1>
+              </div>
+              <button
+                onClick={() => setDebugMode(!debugMode)}
+                className="text-xs px-2 py-1 bg-gray-200 text-gray-600 rounded"
+              >
+                🐛
+              </button>
+            </div>
             <p className="text-primary-600 mt-3 text-sm sm:text-base">
               読書に集中できる場所を見つけよう
             </p>
@@ -221,6 +283,55 @@ function HomePage() {
           </div>
         </div>
       </header>
+
+      {/* エラー表示 */}
+      {error && (
+        <div className="w-full max-w-md px-6 mt-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="text-red-800 font-medium text-sm">⚠️ エラー</h3>
+                <p className="text-red-600 text-xs mt-1">{error}</p>
+                <p className="text-xs text-red-500 mt-1">
+                  API: {API_BASE_URL}
+                </p>
+              </div>
+              <button
+                onClick={clearError}
+                className="text-red-500 hover:text-red-700 text-sm"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* デバッグ情報 */}
+      {debugMode && (
+        <div className="w-full max-w-md px-6 mt-4">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+            <h3 className="text-gray-800 font-medium mb-2 text-sm">🐛 DEBUG</h3>
+            <div className="space-y-1 text-xs text-gray-600">
+              <div>API: {API_BASE_URL}</div>
+              <div>駅: {selectedStation || '未選択'}</div>
+              <div>駅数: {stations.length}</div>
+              <div>カフェ: {cafes.length}</div>
+              <div>本屋: {bookstores.length}</div>
+              <div>バー: {bars.length}</div>
+              <div>読込中: {loading ? 'Yes' : 'No'}</div>
+              {Object.keys(apiErrors).length > 0 && (
+                <details className="mt-2">
+                  <summary className="cursor-pointer text-red-600">エラー詳細</summary>
+                  <pre className="mt-1 text-xs bg-gray-100 p-2 rounded overflow-auto max-h-32">
+                    {JSON.stringify(apiErrors, null, 2)}
+                  </pre>
+                </details>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* メインコンテンツ */}
       <main className="w-full max-w-md px-6 py-6 flex-1">

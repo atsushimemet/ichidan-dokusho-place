@@ -19,6 +19,15 @@ function AdminDashboard() {
     bars: 0
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [debugMode, setDebugMode] = useState(false);
+  const [apiErrors, setApiErrors] = useState<{[key: string]: any}>({});
+  
+  // エラーをクリアする関数
+  const clearError = () => {
+    setError(null);
+    setApiErrors({});
+  };
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -29,6 +38,20 @@ function AdminDashboard() {
           fetch(`${API_BASE_URL}/api/bookstores/all`),
           fetch(`${API_BASE_URL}/api/bars/all`)
         ]);
+
+        // レスポンスステータスをチェック
+        if (!stationsRes.ok) {
+          throw new Error(`駅データ取得失敗: HTTP ${stationsRes.status}`);
+        }
+        if (!cafesRes.ok) {
+          throw new Error(`カフェデータ取得失敗: HTTP ${cafesRes.status}`);
+        }
+        if (!bookstoresRes.ok) {
+          throw new Error(`本屋データ取得失敗: HTTP ${bookstoresRes.status}`);
+        }
+        if (!barsRes.ok) {
+          throw new Error(`バーデータ取得失敗: HTTP ${barsRes.status}`);
+        }
 
         const [stations, cafes, bookstores, bars] = await Promise.all([
           stationsRes.json(),
@@ -43,8 +66,12 @@ function AdminDashboard() {
           bookstores: bookstores.length,
           bars: bars.length
         });
+        clearError(); // 成功時はエラーをクリア
       } catch (error) {
         console.error('Failed to fetch stats:', error);
+        const errorMessage = `統計データの取得に失敗: ${error instanceof Error ? error.message : String(error)}`;
+        setError(errorMessage);
+        setApiErrors(prev => ({...prev, stats: error}));
       } finally {
         setLoading(false);
       }
@@ -64,9 +91,63 @@ function AdminDashboard() {
   return (
     <div className="space-y-6">
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">ダッシュボード</h1>
-        <p className="mt-2 text-gray-600 text-sm sm:text-base">ichidan-dokusho-place 管理画面</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">ダッシュボード</h1>
+            <p className="mt-2 text-gray-600 text-sm sm:text-base">ichidan-dokusho-place 管理画面</p>
+          </div>
+          <button
+            onClick={() => setDebugMode(!debugMode)}
+            className="text-xs px-2 py-1 bg-gray-200 text-gray-600 rounded"
+          >
+            🐛 DEBUG
+          </button>
+        </div>
       </div>
+
+      {/* エラー表示 */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="text-red-800 font-medium">⚠️ エラーが発生しました</h3>
+              <p className="text-red-600 text-sm mt-1">{error}</p>
+              <p className="text-xs text-red-500 mt-1">
+                API URL: {API_BASE_URL}
+              </p>
+            </div>
+            <button
+              onClick={clearError}
+              className="text-red-500 hover:text-red-700 text-sm"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* デバッグ情報 */}
+      {debugMode && (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <h3 className="text-gray-800 font-medium mb-2">🐛 デバッグ情報</h3>
+          <div className="space-y-2 text-xs text-gray-600">
+            <div>API URL: {API_BASE_URL}</div>
+            <div>駅数: {stats.stations}</div>
+            <div>カフェ数: {stats.cafes}</div>
+            <div>本屋数: {stats.bookstores}</div>
+            <div>バー数: {stats.bars}</div>
+            <div>ローディング中: {loading ? 'はい' : 'いいえ'}</div>
+            {Object.keys(apiErrors).length > 0 && (
+              <details className="mt-2">
+                <summary className="cursor-pointer text-red-600">APIエラー詳細</summary>
+                <pre className="mt-1 text-xs bg-gray-100 p-2 rounded overflow-auto">
+                  {JSON.stringify(apiErrors, null, 2)}
+                </pre>
+              </details>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 統計カード - モバイル縦型レイアウト */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
