@@ -23,21 +23,60 @@ function AdminDashboard() {
   const [debugMode, setDebugMode] = useState(false);
   const [apiErrors, setApiErrors] = useState<{[key: string]: any}>({});
   
+  // スマホデバッグ機能
+  const [mobileConsole, setMobileConsole] = useState<string[]>([]);
+  const [showMobileConsole, setShowMobileConsole] = useState(false);
+  const [networkLogs, setNetworkLogs] = useState<any[]>([]);
+  
+  // ログを追加する関数
+  const addMobileLog = (message: string, type: 'info' | 'error' | 'warn' | 'network' = 'info') => {
+    const timestamp = new Date().toLocaleTimeString();
+    const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+    setMobileConsole(prev => [...prev.slice(-49), logEntry]); // 最新50件を保持
+  };
+  
+  // ネットワークログを追加する関数
+  const addNetworkLog = (method: string, url: string, status?: number, data?: any) => {
+    const timestamp = new Date().toLocaleTimeString();
+    const logEntry = {
+      timestamp,
+      method,
+      url,
+      status,
+      data,
+      id: Date.now()
+    };
+    setNetworkLogs(prev => [...prev.slice(-19), logEntry]); // 最新20件を保持
+  };
+  
   // エラーをクリアする関数
   const clearError = () => {
     setError(null);
     setApiErrors({});
   };
+  
+  // デバッグログをクリア
+  const clearDebugLogs = () => {
+    setMobileConsole([]);
+    setNetworkLogs([]);
+  };
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
+        addMobileLog('管理画面統計データ取得開始', 'info');
+        
         const [stationsRes, cafesRes, bookstoresRes, barsRes] = await Promise.all([
           fetch(`${API_BASE_URL}/api/stations/all`),
           fetch(`${API_BASE_URL}/api/cafes/all`),
           fetch(`${API_BASE_URL}/api/bookstores/all`),
           fetch(`${API_BASE_URL}/api/bars/all`)
         ]);
+
+        addNetworkLog('GET', `${API_BASE_URL}/api/stations/all`, stationsRes.status);
+        addNetworkLog('GET', `${API_BASE_URL}/api/cafes/all`, cafesRes.status);
+        addNetworkLog('GET', `${API_BASE_URL}/api/bookstores/all`, bookstoresRes.status);
+        addNetworkLog('GET', `${API_BASE_URL}/api/bars/all`, barsRes.status);
 
         // レスポンスステータスをチェック
         if (!stationsRes.ok) {
@@ -66,10 +105,13 @@ function AdminDashboard() {
           bookstores: bookstores.length,
           bars: bars.length
         });
+        
+        addMobileLog(`統計データ取得完了: 駅${stations.length}件, カフェ${cafes.length}件, 本屋${bookstores.length}件, バー${bars.length}件`, 'info');
         clearError(); // 成功時はエラーをクリア
       } catch (error) {
         console.error('Failed to fetch stats:', error);
         const errorMessage = `統計データの取得に失敗: ${error instanceof Error ? error.message : String(error)}`;
+        addMobileLog(errorMessage, 'error');
         setError(errorMessage);
         setApiErrors(prev => ({...prev, stats: error}));
       } finally {
@@ -96,12 +138,20 @@ function AdminDashboard() {
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">ダッシュボード</h1>
             <p className="mt-2 text-gray-600 text-sm sm:text-base">ichidan-dokusho-place 管理画面</p>
           </div>
-          <button
-            onClick={() => setDebugMode(!debugMode)}
-            className="text-xs px-2 py-1 bg-gray-200 text-gray-600 rounded"
-          >
-            🐛 DEBUG
-          </button>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setDebugMode(!debugMode)}
+              className={`text-xs px-2 py-1 rounded ${debugMode ? 'bg-blue-200 text-blue-700' : 'bg-gray-200 text-gray-600'}`}
+            >
+              🐛
+            </button>
+            <button
+              onClick={() => setShowMobileConsole(!showMobileConsole)}
+              className={`text-xs px-2 py-1 rounded ${showMobileConsole ? 'bg-green-200 text-green-700' : 'bg-gray-200 text-gray-600'}`}
+            >
+              📱
+            </button>
+          </div>
         </div>
       </div>
 
@@ -146,6 +196,70 @@ function AdminDashboard() {
               </details>
             )}
           </div>
+        </div>
+      )}
+
+      {/* スマホコンソール */}
+      {showMobileConsole && (
+        <div className="bg-black text-green-400 rounded-lg p-4 font-mono text-xs mb-6">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-green-300 font-bold">📱 管理画面コンソール</h3>
+            <div className="flex gap-1">
+              <button
+                onClick={clearDebugLogs}
+                className="text-red-400 hover:text-red-300 px-2 py-1 bg-gray-800 rounded text-xs"
+              >
+                Clear
+              </button>
+              <button
+                onClick={() => setShowMobileConsole(false)}
+                className="text-gray-400 hover:text-gray-300 px-2 py-1 bg-gray-800 rounded text-xs"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+          
+          <div className="max-h-64 overflow-y-auto space-y-1">
+            {mobileConsole.length === 0 ? (
+              <div className="text-gray-500">ログがありません</div>
+            ) : (
+              mobileConsole.map((log, index) => (
+                <div 
+                  key={index} 
+                  className={`${
+                    log.includes('ERROR') ? 'text-red-400' :
+                    log.includes('WARN') ? 'text-yellow-400' :
+                    log.includes('NETWORK') ? 'text-blue-400' :
+                    'text-green-400'
+                  }`}
+                >
+                  {log}
+                </div>
+              ))
+            )}
+          </div>
+          
+          {networkLogs.length > 0 && (
+            <details className="mt-2">
+              <summary className="text-blue-300 cursor-pointer">ネットワークログ ({networkLogs.length})</summary>
+              <div className="mt-1 max-h-32 overflow-y-auto space-y-1">
+                {networkLogs.map((log) => (
+                  <div key={log.id} className="text-xs">
+                    <div className={`${log.status >= 200 && log.status < 300 ? 'text-green-400' : 'text-red-400'}`}>
+                      [{log.timestamp}] {log.method} {log.url.split('/').pop()} 
+                      {log.status ? ` - ${log.status}` : ' - PENDING'}
+                    </div>
+                    {log.data && (
+                      <div className="text-gray-400 ml-2 truncate">
+                        {typeof log.data === 'object' ? JSON.stringify(log.data).slice(0, 100) : String(log.data).slice(0, 100)}...
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
         </div>
       )}
 
