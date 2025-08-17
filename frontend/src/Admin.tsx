@@ -662,7 +662,7 @@ function Admin() {
                 <RegionalSelector
                   selectedRegion={selectedRegion}
                   selectedPrefecture={selectedPrefecture}
-                  selectedStation={editingItem.station}
+                  selectedStation={selectedStation}
                   onRegionChange={setSelectedRegion}
                   onPrefectureChange={setSelectedPrefecture}
                   onStationChange={(station) => {
