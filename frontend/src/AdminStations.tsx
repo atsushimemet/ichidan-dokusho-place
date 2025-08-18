@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import EditModal from './components/EditModal';
 
 // API URLを環境変数から取得
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -17,6 +18,7 @@ function AdminStations() {
   const [stations, setStations] = useState<Station[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [editingStation, setEditingStation] = useState<Station | null>(null);
 
   useEffect(() => {
     fetchStations();
@@ -37,6 +39,32 @@ function AdminStations() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEdit = (station: Station) => {
+    setEditingStation(station);
+  };
+
+  const handleSaveStation = async (data: any) => {
+    if (!editingStation) return;
+    
+    const response = await fetch(`${API_BASE_URL}/api/stations/${editingStation.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || '更新に失敗しました');
+    }
+
+    // Update local state
+    const updatedStation = await response.json();
+    setStations(stations.map(s => s.id === editingStation.id ? updatedStation : s));
+    setEditingStation(null);
   };
 
   const handleDelete = async (id: number, name: string) => {
@@ -136,7 +164,13 @@ function AdminStations() {
                       </div>
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-gray-200">
+                    <div className="mt-4 pt-3 border-t border-gray-200 flex flex-col sm:flex-row gap-2">
+                      <button
+                        onClick={() => handleEdit(station)}
+                        className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                      >
+                        編集
+                      </button>
                       <button
                         onClick={() => handleDelete(station.id, station.name)}
                         className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
@@ -204,8 +238,14 @@ function AdminStations() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <button
+                            onClick={() => handleEdit(station)}
+                            className="text-blue-600 hover:text-blue-900 mr-4"
+                          >
+                            編集
+                          </button>
+                          <button
                             onClick={() => handleDelete(station.id, station.name)}
-                            className="text-red-600 hover:text-red-900 ml-4"
+                            className="text-red-600 hover:text-red-900"
                           >
                             削除
                           </button>
@@ -219,6 +259,17 @@ function AdminStations() {
           )}
         </div>
       </div>
+
+      <EditModal
+        isOpen={!!editingStation}
+        onClose={() => setEditingStation(null)}
+        onSave={handleSaveStation}
+        title="駅編集"
+        fields={[
+          { key: 'name', label: '駅名', type: 'text', required: true, value: editingStation?.name || '' },
+          { key: 'location', label: '所在地', type: 'text', required: true, value: editingStation?.location || '' },
+        ]}
+      />
     </div>
   );
 }
