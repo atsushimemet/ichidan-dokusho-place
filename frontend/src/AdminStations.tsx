@@ -11,7 +11,21 @@ interface Station {
   prefecture_id?: number;
   prefecture_name?: string;
   region_name?: string;
+  region_id?: number;
   created_at?: string;
+}
+
+interface Region {
+  id: number;
+  name: string;
+  code: string;
+}
+
+interface Prefecture {
+  id: number;
+  name: string;
+  code: string;
+  region_id: number;
 }
 
 function AdminStations() {
@@ -19,9 +33,13 @@ function AdminStations() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [editingStation, setEditingStation] = useState<Station | null>(null);
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [prefectures, setPrefectures] = useState<Prefecture[]>([]);
+  const [selectedRegion, setSelectedRegion] = useState<number | undefined>();
 
   useEffect(() => {
     fetchStations();
+    fetchRegions();
   }, []);
 
   const fetchStations = async () => {
@@ -41,19 +59,74 @@ function AdminStations() {
     }
   };
 
-  const handleEdit = (station: Station) => {
+  const fetchRegions = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/regions`);
+      if (response.ok) {
+        const data = await response.json();
+        setRegions(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch regions:', error);
+    }
+  };
+
+  const fetchPrefectures = async (regionId: number) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/prefectures?region_id=${regionId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setPrefectures(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch prefectures:', error);
+      setPrefectures([]);
+    }
+  };
+
+  const handleEdit = async (station: Station) => {
     setEditingStation(station);
+    
+    // If station has a prefecture, find its region and fetch prefectures
+    if (station.prefecture_id) {
+      // Find the region for this prefecture
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/prefectures`);
+        if (response.ok) {
+          const allPrefectures = await response.json();
+          const stationPrefecture = allPrefectures.find((p: Prefecture) => p.id === station.prefecture_id);
+          if (stationPrefecture) {
+            setSelectedRegion(stationPrefecture.region_id);
+            await fetchPrefectures(stationPrefecture.region_id);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch prefecture data:', error);
+      }
+    } else {
+      setSelectedRegion(undefined);
+      setPrefectures([]);
+    }
   };
 
   const handleSaveStation = async (data: any) => {
     if (!editingStation) return;
+    
+    // Convert string IDs to numbers for prefecture_id
+    const processedData = {
+      ...data,
+      prefecture_id: data.prefecture_id ? parseInt(data.prefecture_id) : undefined,
+    };
+    
+    // Remove region_id as it's not needed for the API (derived from prefecture)
+    delete processedData.region_id;
     
     const response = await fetch(`${API_BASE_URL}/api/stations/${editingStation.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify(processedData),
     });
 
     if (!response.ok) {
@@ -61,10 +134,11 @@ function AdminStations() {
       throw new Error(error.error || '更新に失敗しました');
     }
 
-    // Update local state
-    const updatedStation = await response.json();
-    setStations(stations.map(s => s.id === editingStation.id ? updatedStation : s));
+    // Update local state and refresh the list to get updated region/prefecture info
+    await fetchStations();
     setEditingStation(null);
+    setSelectedRegion(undefined);
+    setPrefectures([]);
   };
 
   const handleDelete = async (id: number, name: string) => {
@@ -262,13 +336,41 @@ function AdminStations() {
 
       <EditModal
         isOpen={!!editingStation}
-        onClose={() => setEditingStation(null)}
+        onClose={() => {
+          setEditingStation(null);
+          setSelectedRegion(undefined);
+          setPrefectures([]);
+        }}
         onSave={handleSaveStation}
         title="駅編集"
         fields={[
           { key: 'name', label: '駅名', type: 'text', required: true, value: editingStation?.name || '' },
           { key: 'location', label: '所在地', type: 'text', required: true, value: editingStation?.location || '' },
+          { 
+            key: 'region_id', 
+            label: '地方', 
+            type: 'select', 
+            required: false, 
+            value: selectedRegion?.toString() || '',
+            options: regions.map(region => ({ value: region.id, label: region.name }))
+          },
+          { 
+            key: 'prefecture_id', 
+            label: '都道府県', 
+            type: 'select', 
+            required: false, 
+            value: editingStation?.prefecture_id?.toString() || '',
+            options: prefectures.map(prefecture => ({ value: prefecture.id, label: prefecture.name })),
+            dependsOn: 'region_id'
+          },
         ]}
+        onFieldChange={(key, value) => {
+          if (key === 'region_id' && value) {
+            const regionId = parseInt(value);
+            setSelectedRegion(regionId);
+            fetchPrefectures(regionId);
+          }
+        }}
       />
     </div>
   );

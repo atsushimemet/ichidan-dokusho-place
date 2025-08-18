@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
 
+interface SelectOption {
+  value: string | number;
+  label: string;
+}
+
 interface EditModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -8,13 +13,16 @@ interface EditModalProps {
   fields: {
     key: string;
     label: string;
-    type: 'text' | 'url' | 'number';
+    type: 'text' | 'url' | 'number' | 'select';
     required?: boolean;
     value: string;
+    options?: SelectOption[];
+    dependsOn?: string; // For cascading dropdowns
   }[];
+  onFieldChange?: (key: string, value: string) => void; // For handling external field changes
 }
 
-function EditModal({ isOpen, onClose, onSave, title, fields }: EditModalProps) {
+function EditModal({ isOpen, onClose, onSave, title, fields, onFieldChange }: EditModalProps) {
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -46,7 +54,21 @@ function EditModal({ isOpen, onClose, onSave, title, fields }: EditModalProps) {
   };
 
   const handleChange = (key: string, value: string) => {
-    setFormData(prev => ({ ...prev, [key]: value }));
+    setFormData(prev => {
+      const newData = { ...prev, [key]: value };
+      
+      // If this field change affects dependent fields, clear them
+      fields.forEach(field => {
+        if (field.dependsOn === key) {
+          newData[field.key] = '';
+        }
+      });
+      
+      return newData;
+    });
+    
+    // Call external field change handler if provided
+    onFieldChange?.(key, value);
   };
 
   if (!isOpen) return null;
@@ -79,15 +101,32 @@ function EditModal({ isOpen, onClose, onSave, title, fields }: EditModalProps) {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {field.label} {field.required && <span className="text-red-500">*</span>}
               </label>
-              <input
-                type={field.type}
-                value={formData[field.key] || ''}
-                onChange={(e) => handleChange(field.key, e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required={field.required}
-                disabled={loading}
-                placeholder={field.type === 'url' ? 'https://...' : ''}
-              />
+              {field.type === 'select' ? (
+                <select
+                  value={formData[field.key] || ''}
+                  onChange={(e) => handleChange(field.key, e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required={field.required}
+                  disabled={loading || (field.dependsOn ? !formData[field.dependsOn] : false)}
+                >
+                  <option value="">{field.label}を選択してください</option>
+                  {field.options?.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type={field.type}
+                  value={formData[field.key] || ''}
+                  onChange={(e) => handleChange(field.key, e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required={field.required}
+                  disabled={loading}
+                  placeholder={field.type === 'url' ? 'https://...' : ''}
+                />
+              )}
             </div>
           ))}
           
