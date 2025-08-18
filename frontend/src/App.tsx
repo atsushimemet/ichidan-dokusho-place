@@ -7,6 +7,7 @@ import AdminStations from './AdminStations';
 import AdminCafes from './AdminCafes';
 import AdminBooks from './AdminBooks';
 import AdminBars from './AdminBars';
+import RegionalSelector from './components/RegionalSelector';
 
 interface Place {
   id: number;
@@ -34,7 +35,9 @@ interface StationForm {
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 function HomePage() {
-  const [selectedStation, setSelectedStation] = useState('')
+  const [selectedRegion, setSelectedRegion] = useState<number | undefined>()
+  const [selectedPrefecture, setSelectedPrefecture] = useState<number | undefined>()
+  const [selectedStation, setSelectedStation] = useState<string | undefined>()
   const [activeTab, setActiveTab] = useState<'cafes' | 'bookstores' | 'bars'>('cafes')
   const [cafes, setCafes] = useState<Place[]>([])
   const [bookstores, setBookstores] = useState<Place[]>([])
@@ -136,42 +139,7 @@ function HomePage() {
     }
   }
 
-  useEffect(() => {
-    const fetchStations = async () => {
-      try {
-        addMobileLog('駅データ取得開始', 'info')
-        addNetworkLog('GET', `${API_BASE_URL}/api/stations`)
-        
-        const response = await fetch(`${API_BASE_URL}/api/stations`);
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        const data = await response.json();
-        
-        addNetworkLog('GET', `${API_BASE_URL}/api/stations`, response.status, data)
-        addMobileLog(`駅データ取得成功: ${data.length}件`, 'info')
-        
-        setStations(data);
-        clearError(); // 成功時はエラーをクリア
-      } catch (error) {
-        console.error('Failed to fetch stations:', error);
-        const errorMessage = `駅データの取得に失敗: ${error instanceof Error ? error.message : String(error)}`;
-        
-        addMobileLog(errorMessage, 'error')
-        addNetworkLog('GET', `${API_BASE_URL}/api/stations`, 0, error)
-        
-        setError(errorMessage);
-        setApiErrors(prev => ({...prev, stations: error}));
-        // フォールバック: ハードコードされた駅リスト
-        setStations([
-          '渋谷駅', '新宿駅', '池袋駅', '東京駅', '品川駅',
-          '上野駅', '秋葉原駅', '原宿駅', '代官山駅', '恵比寿駅'
-        ]);
-        addMobileLog('フォールバック駅リストを使用', 'warn')
-      }
-    };
-    fetchStations();
-  }, []);
+
 
   useEffect(() => {
     if (selectedStation) {
@@ -428,8 +396,9 @@ function HomePage() {
             <h3 className="text-gray-800 font-medium mb-2 text-sm">🐛 DEBUG</h3>
             <div className="space-y-1 text-xs text-gray-600">
               <div>API: {API_BASE_URL}</div>
+              <div>地方: {selectedRegion || '未選択'}</div>
+              <div>都道府県: {selectedPrefecture || '未選択'}</div>
               <div>駅: {selectedStation || '未選択'}</div>
-              <div>駅数: {stations.length}</div>
               <div>カフェ: {cafes.length}</div>
               <div>本屋: {bookstores.length}</div>
               <div>バー: {bars.length}</div>
@@ -484,7 +453,7 @@ function HomePage() {
                 Refresh
               </button>
               <button
-                onClick={() => addMobileLog(`現在の状況: 駅=${selectedStation}, カフェ=${cafes.length}, 本屋=${bookstores.length}, バー=${bars.length}`, 'info')}
+                onClick={() => addMobileLog(`現在の状況: 地方=${selectedRegion}, 都道府県=${selectedPrefecture}, 駅=${selectedStation}, カフェ=${cafes.length}, 本屋=${bookstores.length}, バー=${bars.length}`, 'info')}
                 className="text-yellow-300 hover:text-yellow-200 px-2 py-1 bg-gray-800 rounded text-xs"
               >
                 Status
@@ -570,24 +539,20 @@ function HomePage() {
           </div>
         </section>
 
-        {/* 駅選択 */}
+        {/* 地域・駅選択 */}
         <section className="mb-6">
           <div className="card">
             <h2 className="text-base sm:text-lg font-semibold text-primary-900 mb-3 border-b border-primary-200 pb-2">
-              最寄駅を選択
+              地域・駅を選択
             </h2>
-            <select
-              value={selectedStation}
-              onChange={(e) => setSelectedStation(e.target.value)}
-              className="w-full px-3 py-3 border border-primary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base"
-            >
-              <option value="">駅を選択してください</option>
-              {stations.map((station) => (
-                <option key={station} value={station}>
-                  {station}
-                </option>
-              ))}
-            </select>
+            <RegionalSelector
+              selectedRegion={selectedRegion}
+              selectedPrefecture={selectedPrefecture}
+              selectedStation={selectedStation}
+              onRegionChange={setSelectedRegion}
+              onPrefectureChange={setSelectedPrefecture}
+              onStationChange={setSelectedStation}
+            />
           </div>
         </section>
 
