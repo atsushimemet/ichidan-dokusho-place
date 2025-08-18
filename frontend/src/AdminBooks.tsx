@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import EditModal from './components/EditModal';
 
 // API URLを環境変数から取得
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -17,6 +18,7 @@ function AdminBooks() {
   const [bookstores, setBookstores] = useState<Bookstore[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [editingBookstore, setEditingBookstore] = useState<Bookstore | null>(null);
 
   useEffect(() => {
     fetchBookstores();
@@ -37,6 +39,31 @@ function AdminBooks() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEdit = (bookstore: Bookstore) => {
+    setEditingBookstore(bookstore);
+  };
+
+  const handleSaveBookstore = async (data: any) => {
+    if (!editingBookstore) return;
+    
+    const response = await fetch(`${API_BASE_URL}/api/bookstores/${editingBookstore.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || '更新に失敗しました');
+    }
+
+    const updatedBookstore = await response.json();
+    setBookstores(bookstores.map(b => b.id === editingBookstore.id ? updatedBookstore : b));
+    setEditingBookstore(null);
   };
 
   const handleDelete = async (id: number, name: string) => {
@@ -145,7 +172,13 @@ function AdminBooks() {
                       </div>
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-gray-200">
+                    <div className="mt-4 pt-3 border-t border-gray-200 flex flex-col sm:flex-row gap-2">
+                      <button
+                        onClick={() => handleEdit(bookstore)}
+                        className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                      >
+                        編集
+                      </button>
                       <button
                         onClick={() => handleDelete(bookstore.id, bookstore.name)}
                         className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
@@ -226,8 +259,14 @@ function AdminBooks() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <button
+                            onClick={() => handleEdit(bookstore)}
+                            className="text-blue-600 hover:text-blue-900 mr-4"
+                          >
+                            編集
+                          </button>
+                          <button
                             onClick={() => handleDelete(bookstore.id, bookstore.name)}
-                            className="text-red-600 hover:text-red-900 ml-4"
+                            className="text-red-600 hover:text-red-900"
                           >
                             削除
                           </button>
@@ -241,6 +280,19 @@ function AdminBooks() {
           )}
         </div>
       </div>
+
+      <EditModal
+        isOpen={!!editingBookstore}
+        onClose={() => setEditingBookstore(null)}
+        onSave={handleSaveBookstore}
+        title="本屋編集"
+        fields={[
+          { key: 'name', label: '店舗名', type: 'text', required: true, value: editingBookstore?.name || '' },
+          { key: 'station', label: '最寄駅', type: 'text', required: true, value: editingBookstore?.station || '' },
+          { key: 'google_maps_url', label: 'Google Maps URL', type: 'url', required: true, value: editingBookstore?.google_maps_url || '' },
+          { key: 'walking_time', label: '徒歩時間（分）', type: 'number', required: false, value: editingBookstore?.walking_time || '' },
+        ]}
+      />
     </div>
   );
 }

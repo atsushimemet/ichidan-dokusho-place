@@ -585,6 +585,55 @@ app.post('/api/cafes', async (req: express.Request, res: express.Response) => {
   }
 });
 
+// 喫茶店編集
+app.put('/api/cafes/:id', async (req: express.Request, res: express.Response) => {
+  try {
+    const { id } = req.params;
+    const { name, location, station, google_maps_url, walking_time } = req.body;
+    
+    if (!name || !station || !google_maps_url) {
+      return res.status(400).json({ error: '店舗名、最寄駅、Google Maps URLは必須です' });
+    }
+    
+    // 徒歩時間のバリデーション
+    if (walking_time) {
+      const walkingTimeNum = parseInt(walking_time);
+      if (isNaN(walkingTimeNum) || walkingTimeNum < 1 || walkingTimeNum > 60) {
+        return res.status(400).json({ error: '徒歩時間は1〜60分の整数で入力してください' });
+      }
+    }
+    
+    // locationが指定されていない場合、stationから推測
+    const finalLocation = location || getLocationFromStation(station);
+    
+    const result = await pool.query(
+      'UPDATE cafes SET name = $1, location = $2, station = $3, google_maps_url = $4, walking_time = $5 WHERE id = $6 RETURNING *',
+      [name, finalLocation, station, google_maps_url, walking_time || null, id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: '喫茶店が見つかりません' });
+    }
+    
+    const updatedCafe = {
+      id: result.rows[0].id,
+      name: result.rows[0].name,
+      location: result.rows[0].location,
+      station: result.rows[0].station,
+      google_maps_url: result.rows[0].google_maps_url,
+      walking_time: result.rows[0].walking_time
+    };
+    
+    res.json(updatedCafe);
+  } catch (error: any) {
+    if (error.code === '23505') { // UNIQUE制約違反
+      return res.status(400).json({ error: 'この喫茶店名は既に登録されています' });
+    }
+    console.error('Error updating cafe:', error);
+    res.status(500).json({ error: 'Failed to update cafe' });
+  }
+});
+
 // 本屋一覧取得
 app.get('/api/bookstores', async (req: express.Request, res: express.Response) => {
   try {
@@ -693,6 +742,55 @@ app.post('/api/bookstores', async (req: express.Request, res: express.Response) 
   }
 });
 
+// 本屋編集
+app.put('/api/bookstores/:id', async (req: express.Request, res: express.Response) => {
+  try {
+    const { id } = req.params;
+    const { name, location, station, google_maps_url, walking_time } = req.body;
+    
+    if (!name || !station || !google_maps_url) {
+      return res.status(400).json({ error: '店舗名、最寄駅、Google Maps URLは必須です' });
+    }
+    
+    // 徒歩時間のバリデーション
+    if (walking_time) {
+      const walkingTimeNum = parseInt(walking_time);
+      if (isNaN(walkingTimeNum) || walkingTimeNum < 1 || walkingTimeNum > 60) {
+        return res.status(400).json({ error: '徒歩時間は1〜60分の整数で入力してください' });
+      }
+    }
+    
+    // locationが指定されていない場合、stationから推測
+    const finalLocation = location || getLocationFromStation(station);
+    
+    const result = await pool.query(
+      'UPDATE bookstores SET name = $1, location = $2, station = $3, google_maps_url = $4, walking_time = $5 WHERE id = $6 RETURNING *',
+      [name, finalLocation, station, google_maps_url, walking_time || null, id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: '本屋が見つかりません' });
+    }
+    
+    const updatedBookstore = {
+      id: result.rows[0].id,
+      name: result.rows[0].name,
+      location: result.rows[0].location,
+      station: result.rows[0].station,
+      google_maps_url: result.rows[0].google_maps_url,
+      walking_time: result.rows[0].walking_time
+    };
+    
+    res.json(updatedBookstore);
+  } catch (error: any) {
+    if (error.code === '23505') { // UNIQUE制約違反
+      return res.status(400).json({ error: 'この本屋名は既に登録されています' });
+    }
+    console.error('Error updating bookstore:', error);
+    res.status(500).json({ error: 'Failed to update bookstore' });
+  }
+});
+
 // バー一覧取得
 app.get('/api/bars', async (req: express.Request, res: express.Response) => {
   try {
@@ -798,6 +896,55 @@ app.post('/api/bars', async (req: express.Request, res: express.Response) => {
   } catch (error) {
     console.error('Error creating bar:', error);
     res.status(500).json({ error: 'Failed to create bar' });
+  }
+});
+
+// バー編集
+app.put('/api/bars/:id', async (req: express.Request, res: express.Response) => {
+  try {
+    const { id } = req.params;
+    const { name, location, station, google_maps_url, walking_time } = req.body;
+    
+    if (!name || !station || !google_maps_url) {
+      return res.status(400).json({ error: '店舗名、最寄駅、Google Maps URLは必須です' });
+    }
+    
+    // 徒歩時間のバリデーション
+    if (walking_time) {
+      const walkingTimeNum = parseInt(walking_time);
+      if (isNaN(walkingTimeNum) || walkingTimeNum < 1 || walkingTimeNum > 60) {
+        return res.status(400).json({ error: '徒歩時間は1〜60分の整数で入力してください' });
+      }
+    }
+    
+    // locationが指定されていない場合、stationから推測
+    const finalLocation = location || getLocationFromStation(station);
+    
+    const result = await pool.query(
+      'UPDATE bars SET name = $1, location = $2, station = $3, google_maps_url = $4, walking_time = $5 WHERE id = $6 RETURNING *',
+      [name, finalLocation, station, google_maps_url, walking_time || null, id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'バーが見つかりません' });
+    }
+    
+    const updatedBar = {
+      id: result.rows[0].id,
+      name: result.rows[0].name,
+      location: result.rows[0].location,
+      station: result.rows[0].station,
+      google_maps_url: result.rows[0].google_maps_url,
+      walking_time: result.rows[0].walking_time
+    };
+    
+    res.json(updatedBar);
+  } catch (error: any) {
+    if (error.code === '23505') { // UNIQUE制約違反
+      return res.status(400).json({ error: 'このバー名は既に登録されています' });
+    }
+    console.error('Error updating bar:', error);
+    res.status(500).json({ error: 'Failed to update bar' });
   }
 });
 

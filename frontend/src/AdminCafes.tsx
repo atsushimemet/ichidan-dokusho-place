@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import EditModal from './components/EditModal';
 
 // API URLを環境変数から取得
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -17,6 +18,7 @@ function AdminCafes() {
   const [cafes, setCafes] = useState<Cafe[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [editingCafe, setEditingCafe] = useState<Cafe | null>(null);
 
   useEffect(() => {
     fetchCafes();
@@ -37,6 +39,31 @@ function AdminCafes() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEdit = (cafe: Cafe) => {
+    setEditingCafe(cafe);
+  };
+
+  const handleSaveCafe = async (data: any) => {
+    if (!editingCafe) return;
+    
+    const response = await fetch(`${API_BASE_URL}/api/cafes/${editingCafe.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || '更新に失敗しました');
+    }
+
+    const updatedCafe = await response.json();
+    setCafes(cafes.map(c => c.id === editingCafe.id ? updatedCafe : c));
+    setEditingCafe(null);
   };
 
   const handleDelete = async (id: number, name: string) => {
@@ -145,7 +172,13 @@ function AdminCafes() {
                       </div>
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-gray-200">
+                    <div className="mt-4 pt-3 border-t border-gray-200 flex flex-col sm:flex-row gap-2">
+                      <button
+                        onClick={() => handleEdit(cafe)}
+                        className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                      >
+                        編集
+                      </button>
                       <button
                         onClick={() => handleDelete(cafe.id, cafe.name)}
                         className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
@@ -226,8 +259,14 @@ function AdminCafes() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <button
+                            onClick={() => handleEdit(cafe)}
+                            className="text-blue-600 hover:text-blue-900 mr-4"
+                          >
+                            編集
+                          </button>
+                          <button
                             onClick={() => handleDelete(cafe.id, cafe.name)}
-                            className="text-red-600 hover:text-red-900 ml-4"
+                            className="text-red-600 hover:text-red-900"
                           >
                             削除
                           </button>
@@ -241,6 +280,19 @@ function AdminCafes() {
           )}
         </div>
       </div>
+
+      <EditModal
+        isOpen={!!editingCafe}
+        onClose={() => setEditingCafe(null)}
+        onSave={handleSaveCafe}
+        title="喫茶店編集"
+        fields={[
+          { key: 'name', label: '店舗名', type: 'text', required: true, value: editingCafe?.name || '' },
+          { key: 'station', label: '最寄駅', type: 'text', required: true, value: editingCafe?.station || '' },
+          { key: 'google_maps_url', label: 'Google Maps URL', type: 'url', required: true, value: editingCafe?.google_maps_url || '' },
+          { key: 'walking_time', label: '徒歩時間（分）', type: 'number', required: false, value: editingCafe?.walking_time || '' },
+        ]}
+      />
     </div>
   );
 }
