@@ -10,23 +10,26 @@
     "dev": "nodemon src/index.ts",
     "build": "tsc --skipLibCheck",
     "start": "npm run build && node dist/index.js",
+    "seed": "ts-node src/seed-data.ts",
+    "seed:mock": "ts-node src/seed-mock.ts",
+    "seed:prod": "npm run build && node dist/seed-data.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
+    "@types/cors": "^2.8.15",
+    "@types/express": "^4.17.20",
+    "@types/node": "^20.8.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "pg": "^8.11.3",
-    "typescript": "^5.2.2",
     "ts-node": "^10.9.1",
-    "@types/node": "^20.8.0",
-    "@types/express": "^4.17.20",
-    "@types/cors": "^2.8.15"
+    "typescript": "^5.2.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
-    "@types/pg": "^8.10.9",
+    "@types/pg": "^8.15.5",
     "nodemon": "^3.0.2",
     "ts-node": "^10.9.1",
     "typescript": "^5.3.2"
