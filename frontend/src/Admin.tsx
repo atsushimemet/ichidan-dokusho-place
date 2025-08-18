@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import RegionalSelector from './components/RegionalSelector';
 import { useNavigate } from 'react-router-dom';
 
 interface Place {
@@ -51,6 +52,11 @@ function Admin() {
     name: '',
     location: ''
   });
+
+  // 階層選択用のstate
+  const [selectedRegion, setSelectedRegion] = useState<number | undefined>();
+  const [selectedPrefecture, setSelectedPrefecture] = useState<number | undefined>();
+  const [selectedStation, setSelectedStation] = useState<string | undefined>();
 
   // ログイン処理
   const handleLogin = (e: React.FormEvent) => {
@@ -128,11 +134,19 @@ function Admin() {
       station: item.station,
       walkingTime: item.walkingTime || ''
     });
+    // 階層選択状態をリセット
+    setSelectedRegion(undefined);
+    setSelectedPrefecture(undefined);
+    setSelectedStation(item.station);
   };
 
   // 編集キャンセル
   const handleCancelEdit = () => {
     setEditingItem(null);
+    // 階層選択状態もリセット
+    setSelectedRegion(undefined);
+    setSelectedPrefecture(undefined);
+    setSelectedStation(undefined);
   };
 
   // 編集保存
@@ -157,6 +171,10 @@ function Admin() {
         // 保存後にデータを再取得
         fetchData();
         setEditingItem(null);
+        // 階層選択状態もリセット
+        setSelectedRegion(undefined);
+        setSelectedPrefecture(undefined);
+        setSelectedStation(undefined);
         alert('更新しました');
       } else {
         const error = await response.json();
@@ -641,22 +659,18 @@ function Admin() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    最寄駅
-                  </label>
-                  <select
-                    value={editingItem.station}
-                    onChange={(e) => setEditingItem({ ...editingItem, station: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  >
-                    {stations.map((station) => (
-                      <option key={station.id} value={station.name}>
-                        {station.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <RegionalSelector
+                  selectedRegion={selectedRegion}
+                  selectedPrefecture={selectedPrefecture}
+                  selectedStation={editingItem.station}
+                  onRegionChange={setSelectedRegion}
+                  onPrefectureChange={setSelectedPrefecture}
+                  onStationChange={(station) => {
+                    setSelectedStation(station);
+                    setEditingItem({ ...editingItem, station: station || '' });
+                  }}
+                  className="border border-gray-300 rounded-md p-4"
+                />
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     徒歩時間（分）

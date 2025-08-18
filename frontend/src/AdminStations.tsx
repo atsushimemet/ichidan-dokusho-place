@@ -7,6 +7,9 @@ interface Station {
   id: number;
   name: string;
   location: string;
+  prefecture_id?: number;
+  prefecture_name?: string;
+  region_name?: string;
   created_at?: string;
 }
 
@@ -110,6 +113,18 @@ function AdminStations() {
                         <span className="text-sm font-medium text-gray-500">所在地:</span>
                         <span className="text-sm text-gray-900 ml-2">{station.location}</span>
                       </div>
+                      {station.prefecture_name && (
+                        <div>
+                          <span className="text-sm font-medium text-gray-500">都道府県:</span>
+                          <span className="text-sm text-gray-900 ml-2">{station.prefecture_name}</span>
+                        </div>
+                      )}
+                      {station.region_name && (
+                        <div>
+                          <span className="text-sm font-medium text-gray-500">地方:</span>
+                          <span className="text-sm text-gray-900 ml-2">{station.region_name}</span>
+                        </div>
+                      )}
                       <div>
                         <span className="text-sm font-medium text-gray-500">登録日時:</span>
                         <span className="text-sm text-gray-900 ml-2">
@@ -148,6 +163,12 @@ function AdminStations() {
                         所在地
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        都道府県
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        地方
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         登録日時
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -168,6 +189,12 @@ function AdminStations() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {station.location}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {station.prefecture_name || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {station.region_name || '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {station.created_at 
